@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  secureflow-dashboard:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - MODEL_NAME=llama3.1
+      - SECUREFLOW_THRESHOLD=60
+    volumes:
+      - ./secureflow_log.json:/app/secureflow_log.json
+      - ./experiment_results.json:/app/experiment_results.json
+    restart: unless-stopped
+    # If running Ollama locally on Linux, add extra_hosts configuration or use host network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

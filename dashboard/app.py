@@ -109,6 +109,18 @@ def get_logs():
 
 
 if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description="SecureFlow Dashboard")
+    parser.add_argument("--prod", action="store_true", help="Run with Waitress (production WSGI server)")
+    args = parser.parse_args()
+
     # Ensure templates folder exists
     os.makedirs("dashboard/templates", exist_ok=True)
-    app.run(port=5000, debug=False)
+    
+    if args.prod:
+        from waitress import serve
+        print("Starting SecureFlow Dashboard in PRODUCTION mode via Waitress on port 5000...")
+        serve(app, host="0.0.0.0", port=5000)
+    else:
+        print("Starting SecureFlow Dashboard in DEVELOPMENT mode (Flask dev server)...")
+        app.run(host="0.0.0.0", port=5000, debug=False)
