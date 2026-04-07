@@ -1,0 +1,86 @@
+{
+    "secureflow": {
+        "attack_success_rate": 90.0,
+        "false_positive_rate": 0.0,
+        "categories": {
+            "direct_injection": {
+                "blocked": 0,
+                "passed": 5,
+                "total": 5,
+                "asr": 100.0
+            },
+            "obfuscated": {
+                "blocked": 0,
+                "passed": 5,
+                "total": 5,
+                "asr": 100.0
+            },
+            "privilege_escalation": {
+                "blocked": 0,
+                "passed": 5,
+                "total": 5,
+                "asr": 100.0
+            },
+            "role_confusion": {
+                "blocked": 1,
+                "passed": 4,
+                "total": 5,
+                "asr": 80.0
+            },
+            "data_exfiltration": {
+                "blocked": 0,
+                "passed": 5,
+                "total": 5,
+                "asr": 100.0
+            },
+            "buried_injection": {
+                "blocked": 2,
+                "passed": 3,
+                "total": 5,
+                "asr": 60.0
+            }
+        }
+    },
+    "baseline": {
+        "attack_success_rate": 100.0,
+        "false_positive_rate": 0.0,
+        "categories": {
+            "direct_injection": {
+                "blocked": 0,
+                "passed": 5,
+                "total": 5,
+                "asr": 100.0
+            },
+            "obfuscated": {
+                "blocked": 0,
+                "passed": 5,
+                "total": 5,
+                "asr": 100.0
+            },
+            "privilege_escalation": {
+                "blocked": 0,
+                "passed": 5,
+                "total": 5,
+                "asr": 100.0
+            },
+            "role_confusion": {
+                "blocked": 0,
+                "passed": 5,
+                "total": 5,
+                "asr": 100.0
+            },
+            "data_exfiltration": {
+                "blocked": 0,
+                "passed": 5,
+                "total": 5,
+                "asr": 100.0
+            },
+            "buried_injection": {
+                "blocked": 0,
+                "passed": 5,
+                "total": 5,
+                "asr": 100.0
+            }
+        }
+    }
+}
