@@ -1,6 +1,5 @@
 # 🛡️ SecureFlow: AI Security Middleware for Multi-Agent Systems
-![Downloads](https://static.pepy.tech/badge/secureflow-ai)
-![Total Downloads](https://img.shields.io/pypi/dt/secureflow-ai)
+![Downloads](https://img.shields.io/pypi/dm/secureflow-ai)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
