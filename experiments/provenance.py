@@ -15,7 +15,9 @@ def _git(*args):
 
 
 def provenance() -> dict:
-    status = [l for l in _git("status", "--porcelain").splitlines() if "data/results" not in l.replace("\\", "/")]
+    # `git status --porcelain` lines are "XY path"; ignore generated outputs under data/.
+    status = [l for l in _git("status", "--porcelain").splitlines()
+              if not l.split(None, 1)[-1].replace("\\", "/").startswith("data/")]
     return {
         "code_commit": _git("rev-parse", "HEAD") or "unknown",
         "working_tree_clean": not status,
