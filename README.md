@@ -103,7 +103,8 @@ including a log write measured ~4 ms/message. Negligible next to an LLM call, bu
 0.2 ms" as v1's README claimed.
 
 ## 🔬 Research artifact
-The accompanying paper is in [`paper/`](paper/) (`main.tex`, `main.pdf`). Every number in it is produced by
+The accompanying paper is in [`paper/`](paper/): `main.tex`/`main.pdf` (IEEE conference format, 7 pages including
+references) and `supplement.tex`/`supplement.pdf` (rule tables, ablations, adaptive and latency tables). Every number in it is produced by
 released code and data, and `python paper/check_numbers.py` verifies that the manuscript matches `data/results/`.
 
 ```bash

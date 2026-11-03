@@ -157,6 +157,53 @@ expect("judge models", J27["judge_model"] == "qwen/qwen3.8-27b" and J120["judge_
        ["Qwen3.8-27B", "gpt-oss-120b"])
 expect("classifier model", CL["model"] == "meta-llama/llama-prompt-guard-2-86m", ["Llama Prompt Guard"])
 
+# ---- supplement.tex numbers vs result files ------------------------------------------------------------
+with open(os.path.join(ROOT, "paper", "supplement.tex"), encoding="utf-8") as fh:
+    SUP = fh.read()
+SUPL = SUP.replace(chr(92) + "%", "%")
+
+
+def sup_row(label, section=None):
+    """Return the cells of the supplement table row whose first cell contains `label` (optionally only after
+    the line that starts the given section, so the v1 and v2 tables, which share rule names, stay distinct)."""
+    text = SUP if section is None else SUP[SUP.index(section):]
+    for line in text.splitlines():
+        if label in line and "&" in line:
+            cells = [c.strip().rstrip("\\").strip() for c in line.split("&")]
+            return cells
+    return None
+
+
+for rule, dropped in loo.items():
+    row = sup_row("\\texttt{" + rule.replace("_", "\\_") + "}", "\\section{v2 rule families")
+    expect(f"supplement LOO row {rule}", row is not None and row[-1].strip().rstrip("\\").strip() == str(dropped))
+sw1 = P["section1_v1_reproduction"]["sweep"]
+for lo, hi, n in ((5, 30, 20), (31, 35, 12), (36, 40, 7), (41, 65, 3), (66, 70, 2), (71, 75, 1), (76, 80, 0)):
+    expect(f"supplement plateau {lo}-{hi}", all(sw1[str(t)]["suppressed"] == n for t in range(lo, hi + 1)))
+for name, key in (("v1 scoring, 74 chars", "v1 scoring, short (74 chars)"), ("v1 scoring, 3", "v1 scoring, 3 KB"),
+                  ("v2 scoring, 74 chars", "v2 scoring, short (74 chars)"), ("v2 scoring, 1", "v2 scoring, 1 KB"),
+                  ("v2 scoring, 3", "v2 scoring, 3 KB"), ("v2 intercept + log, 74 chars", "v2 full intercept incl. synchronous hash-chained log write, short"),
+                  ("v2 intercept + log, 3", "v2 full intercept incl. log write, 3 KB"), ("Envelope sign", "envelope sign"),
+                  ("Envelope verify", "envelope verify (HMAC + replay cache)"), ("Tool authorize", "tool authorize (granted READ tool, argument scan on)")):
+    row = sup_row(name)
+    r = lat[key]
+    close = lambda cell, val: abs(float(cell) - val) <= 0.51 * 10 ** -len(cell.split(".")[-1])
+    ok = row is not None and close(row[3], r["median_ms"]) and close(row[2], r["mean_ms"]) and close(row[4], r["p95_ms"]) and close(row[5], r["max_ms"])
+    expect(f"supplement latency row {name}", ok)
+expect("supplement adaptive", all(s in SUPL for s in ("5/5 = 100% [56.6, 100]", "70/78 = 89.7% [81.0, 94.7]", "69/78 = 88.5% [79.5, 93.8]")))
+for rule in P["section3_ablation"]["leave_one_rule_out"]:
+    pass
+sev = {"prompt_injection": 70, "jailbreak_phrases": 70, "chat_template_tokens": 70, "exfil_channel": 65, "agent_directed_instruction": 60,
+       "privilege_escalation": 60, "role_confusion": 60, "data_exfiltration": 60, "safety_bypass": 60, "propagation": 60,
+       "destructive_command": 55, "destructive_data": 55, "defense_evasion": 55, "delimiter_spoofing": 45, "approval_bypass": 45,
+       "mode_switch": 40, "authority_claim": 40}
+import sys as _s
+_s.path.insert(0, ROOT)
+from secureflow.rules import get_rules
+for r in get_rules():
+    row = sup_row("\\texttt{" + r.name.replace("_", "\\_") + "}", "\\section{v2 rule families")
+    expect(f"supplement severity/patterns {r.name}", row is not None and row[1] == str(r.score) and row[2] == str(len(r.patterns)))
+
 # ---- bibliography hygiene and abstract length ----------------------------------------------------
 RAW = open(os.path.join(ROOT, "paper", "main.tex"), encoding="utf-8").read()
 body, _, bibsec = RAW.partition("\\begin{thebibliography}")
