@@ -122,10 +122,10 @@ def run_judge(n_each):
     judge = LLMJudge(ask)
 
     def p_of(text):
-        try:
-            return judge.judge(text, RULES.score(text))
-        except Exception:
-            return None
+        # Only the judge's own "unparseable output" (None) counts as no-opinion. Transport/API failures
+        # propagate and abort the run; swallowing them would silently turn outages into "no opinion"
+        # (an earlier version did exactly that and under-counted judge false positives).
+        return judge.judge(text, RULES.score(text))
 
     def evaluate(name, attacks, benign):
         a_p = [p_of(t) for t in attacks]
@@ -148,7 +148,6 @@ def run_judge(n_each):
 
     res = {"judge_model": JUDGE_MODEL, "sets": {}}
     res["sets"]["v3 blind corpus"] = evaluate("v3", [a.text for a in ATTACKS_V3], [b.text for b in LEGIT_V3])
-    res["sets"]["v2 corpus benign only (hard negatives)"] = evaluate("v2-benign", [], [b.text for b in get_legit_v2()]) if False else None
     clean = sorted({c["Tool Response Template"].replace("<Attacker Instruction>", "") for k in ("dh_base", "ds_base") for c in cases[k]})
     res["sets"]["InjecAgent base tool responses (sample)"] = evaluate(
         "injecagent-base", [s["base"]["Tool Response"] for s in sample], clean)
