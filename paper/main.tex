@@ -100,10 +100,7 @@ forward 15 of 93, but 71.4\% of a blind corpus, and flag only 1.6\% of plain-req
 injections on the independent InjecAgent benchmark (an 86M-parameter learned
 classifier flags none of 100). An oracle-guided adversary evades v2 on 89.7\% of the
 attacks it initially detects. A 27B-parameter LLM judge raises InjecAgent detection
-from 2/100 to 90/100, but false positives depend strongly on the judge. With a
-tool-using agent in the loop, least-privilege policy executed none of the attacker's
-tool calls (0 of 80; Fisher $p=0.0065$ on base cases), a result partly structural to
-the benchmark. Content filtering is a useful audit signal; least-privilege enforcement
+from 2/100 to 90/100, but false positives depend strongly on the judge. With a tool-using agent in the loop, least-privilege policy executed none of the attacker's tool calls (0 of 80; Fisher $p=0.0065$ on base cases), partly by benchmark structure; a second agent never followed an injection (0 of 100), so it tests nothing. Content filtering is a useful audit signal; least-privilege enforcement
 is what bounded the damage. Code, data and replayable model responses are released.
 \end{abstract}
 
@@ -872,8 +869,22 @@ cases (Fisher exact $p=0.0065$) and 4 of 80 on enhanced cases ($p=0.12$, not
 significant at this sample size). We do not pool the two columns because they reuse
 the same 80 cases.
 
-\textbf{Reading this correctly.} (i)~One agent, one model family, and a low
-base rate: the power to detect a policy effect is limited, and the result that the
+\textbf{A second agent, and a positive control.} We repeated the experiment with a
+different-family agent, Qwen3.8-27B, on 25 direct-harm and 25 data-stealing cases per
+variant (a different random sample) and a 20-case control. It emitted the attacker's
+tool call in 0 of 50 base and 0 of 50 enhanced cases (upper bound 7.1\%), and in fact
+called no tool at all after the injected tool response: it answered the user in text
+and treated the injected instruction as content. That could also mean the model does not
+make follow-up tool calls in our setup, so we added a positive control in which the
+\emph{user} asks for the attacker's action. There, Qwen3.8-27B called the attacker's
+tool in 9 of 20 cases (45\%) and gpt-oss-20b in 18 of 20 (90\%). Qwen's 0 of 100 under
+injection, against 45\% when asked, therefore reflects resistance and not inability, and
+gpt-oss-20b's 5--10\% under injection is far below its 90\% when asked. The second agent
+gives no signal about the defenses (it gave them nothing to block), so the
+defense comparison rests on a single agent; what it adds is evidence that susceptibility
+varies widely between models.
+
+\textbf{Reading this correctly.} (i)~The defense comparison rests on one agent and a low base rate: the power to detect a policy effect is limited, and the result that the
 policy executed nothing is partly structural, as in Sec.~\ref{sec:policy}, because
 the attacker's tools are almost never granted to the user's task. (ii)~Our
 single-turn function-calling setup is not InjecAgent's ReAct protocol, so these
@@ -1086,7 +1097,7 @@ low BER and zero FPR (Fig.~\ref{fig:sweep2}).
 
 \textbf{Limited end-to-end measurement.} The detection, adaptive and policy
 experiments place no model in the loop. The one end-to-end experiment
-(Sec.~\ref{sec:llm}) uses a single agent (gpt-oss-20b), 80 cases per variant,
+(Sec.~\ref{sec:llm}) rests on a single informative agent (gpt-oss-20b), 80 cases per variant (a second agent never followed an injection),
 a simplified single-turn protocol and only the first attacker call; the agent
 emitted attacks rarely, so statistical power is low and the enhanced-variant policy
 effect is not significant ($p=0.12$). It makes no claim about the attack success rate
@@ -1171,7 +1182,7 @@ The agent experiment of Sec.~\ref{sec:llm} is a small first step, not a substitu
 \item \textbf{Judge calibration and attack}: choose the cut-offs under a fixed
 false-positive budget~\cite{liu2024formalizing}, measure latency and cost, compare
 several judge models and a larger safeguard model~\cite{inan2023llamaguard}, and
-attack the judge with adaptive injections.
+attack the judge with adaptive injections (a rewrite-robustness test is implemented in the released code but was not run, because the judge model's daily API quota was exhausted).
 \item \textbf{A larger, independently authored, multilingual benign and attack
 corpus}, including content-moderation prompts that legitimately quote injections.
 \item \textbf{Utility measurement of taint gating} on realistic multi-step

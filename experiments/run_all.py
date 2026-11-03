@@ -25,6 +25,9 @@ def llm_replay():
     llm_eval.run_judge(50, llm_eval.JUDGE_MODEL_MAIN, "27b", ("v3", "injecagent", "v2"))
     llm_eval.run_judge(50, llm_eval.JUDGE_MODEL, "120b", ("v3",))
     llm_eval.run_e2e(40, 40)
+    llm_eval.run_e2e(25, 20, "qwen/qwen3.8-27b", "qwen27b")
+    llm_eval.run_capability_control("qwen/qwen3.8-27b", "qwen27b")
+    llm_eval.run_capability_control(llm_eval.AGENT_MODEL, "gptoss20b")
 
 
 def main():
