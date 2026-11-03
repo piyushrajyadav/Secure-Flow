@@ -1,6 +1,9 @@
 import os
 import sys
-from langchain_community.chat_models import ChatOllama
+try:
+    from langchain_ollama import ChatOllama          # current, maintained package
+except ImportError:                                    # pragma: no cover - legacy installs
+    from langchain_community.chat_models import ChatOllama
 from langchain_core.messages import HumanMessage
 from dotenv import load_dotenv
 

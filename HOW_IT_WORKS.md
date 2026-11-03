@@ -1,5 +1,18 @@
 # SecureFlow: Deep Dive & Architecture Guide
 
+> **Updated for v2.** Sections 1-5 below describe the original v1 keyword scorer and are kept for
+> the story of the project. What changed in v2 (see `README.md` for details and measured numbers):
+> - v1 added 30-45 points per matched rule against a block threshold of 60, so a single obvious
+>   injection scored 35 and **passed**. That is why v1 measured ~90% attack success. In v2 a clear
+>   attack scores >= 60 by itself and weak signals combine with diminishing returns.
+> - Text is normalized first (decoding, Unicode/zero-width/homoglyph folding) so encoded or hidden
+>   attacks are visible to the rules (`secureflow/normalize.py`).
+> - Detection is no longer the only defence: signed messages and taint tracking
+>   (`provenance.py`), a default-deny tool policy (`policy.py`), an optional LLM judge
+>   (`judge.py`) and a tamper-evident log (`logger.py`) limit damage when a paraphrase slips through.
+> - Honest limits: on a blind test set the rules layer still misses most paraphrased and
+>   non-English attacks. Run `python -m experiments.evaluate --misses` to see exactly which.
+
 This document is your complete guide to understanding exactly how **SecureFlow** works under the hood. Use this to study for your presentation or answer deep technical questions from your teacher.
 
 ---

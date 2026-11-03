@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="secureflow-ai",  # 'secureflow-ai' is unique for PyPI
-    version="0.1.0",
+    version="2.0.0",
     author="Your Name",  # You can change this later
     author_email="your.email@example.com",
     description="Security middleware for Multi-Agent AI Systems (LangGraph/LangChain).",
@@ -24,9 +24,9 @@ setup(
     ],
     python_requires=">=3.9",
     install_requires=[
-        "langchain>=0.3.0",
-        "langchain-core>=0.3.0",
-        "langgraph>=0.2.0",
-        "colorama>=0.4.6"
+        "colorama>=0.4.6",          # the core firewall has no other runtime dependency
     ],
+    extras_require={
+        "langgraph": ["langgraph>=1.0.0", "langchain>=1.0.0", "langchain-ollama>=0.3.0", "python-dotenv>=1.0.0"],
+    },
 )

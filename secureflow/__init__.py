@@ -1,19 +1,22 @@
 """
-SecureFlow Security Middleware
+SecureFlow - security middleware for multi-agent LLM systems.
 """
 
-__version__ = "1.0.0"
-__author__ = "GitHub Copilot"
+__version__ = "2.0.0"
 
-from secureflow.middleware import SecureFlowMiddleware
-from secureflow.scorer import RiskScorer, ScoreResult
+from secureflow.judge import CallableJudge, LLMJudge
 from secureflow.logger import SecurityLogger
+from secureflow.middleware import SecureFlowMiddleware, Verdict
+from secureflow.policy import PolicyDecision, Sensitivity, ToolPolicy, ToolSpec
+from secureflow.provenance import AgentRegistry, Envelope, MessageSigner, Trust
 from secureflow.rules import Rule
+from secureflow.scorer import RiskScorer, ScoreResult
 
 __all__ = [
-    "SecureFlowMiddleware",
-    "RiskScorer",
-    "ScoreResult",
+    "SecureFlowMiddleware", "Verdict",
+    "RiskScorer", "ScoreResult", "Rule",
     "SecurityLogger",
-    "Rule",
+    "AgentRegistry", "MessageSigner", "Envelope", "Trust",
+    "ToolPolicy", "ToolSpec", "Sensitivity", "PolicyDecision",
+    "LLMJudge", "CallableJudge",
 ]
