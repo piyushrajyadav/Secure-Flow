@@ -38,12 +38,30 @@
 
 \hyphenation{Lang-Graph Lang-Chain Secure-Flow Inject-Agent Agent-Dojo}
 
+%% ---- Review mode: \anontrue hides author names, affiliations, acknowledgments and the repository URL,
+%% ---- and rephrases references to our earlier manuscript. Set \anontrue for double-blind venues.
+\newif\ifanon
+\anonfalse
+\ifanon
+  \newcommand{\ourfirst}{an earlier version of this work}
+  \newcommand{\Ourfirst}{An earlier version of this work}
+  \newcommand{\repourl}{[repository URL withheld for review]}
+\else
+  \newcommand{\ourfirst}{our first manuscript}
+  \newcommand{\Ourfirst}{Our first manuscript}
+  \newcommand{\repourl}{\url{https://github.com/piyushrajyadav/Secure-Flow}}
+\fi
+
 \begin{document}
 
 \title{SecureFlow: The Limits of Content Filtering and the Value of\\
 Provenance-Aware, Least-Privilege Enforcement on the\\
 Inter-Agent Edge of LLM Pipelines}
 
+\ifanon
+\author{\IEEEauthorblockN{Anonymous Authors}
+\IEEEauthorblockA{\textit{Anonymous Institution}}}
+\else
 \author{%
   \IEEEauthorblockN{Piyush Yadav}
   \IEEEauthorblockA{%
@@ -65,40 +83,28 @@ Inter-Agent Edge of LLM Pipelines}
     Kolkata, India\\
     sukanyamukherjee@iem.edu.in}
 }
+\fi
 
 \maketitle
 
 %% ===========================================================================
 \begin{abstract}
 Multi-agent large language model~(LLM) pipelines pass natural-language messages
-between agents, and a message composed from untrusted content can carry
-instructions that a downstream agent has no independent means to reject. We study
-SecureFlow, middleware on the inter-agent edge of LangGraph pipelines, in two
-forms: v1, a weighted keyword scorer (the system of our earlier manuscript), and
-v2, which adds input normalization, recalibrated rules, HMAC-signed messages with
-taint propagation, a default-deny tool policy, an optional escalate-only LLM judge,
-and a tamper-evident audit log. Detection, ablation, adaptive-adversary and policy
-results are deterministic and model-free; model-in-the-loop results use cached,
-replayable responses.
-
-The findings are mixed, and we report them as such. (i)~v1 forwards 88 of 93 attack
-messages because every rule weight lies below its block threshold. (ii)~v2's rules
-cut this to 15 of 93 at 3 of 81 benign false positives, but on a blind corpus they
-still forward 15 of 21 (71.4\%). (iii)~On the independent InjecAgent benchmark
-(1{,}054 cases) the rules flag only 1.6\% of plain-request injections, and an
-86-million-parameter injection classifier (Llama Prompt Guard~2) flags none of 100; the 100\% on the
-``enhanced'' variant reflects one fixed override phrase. (iv)~An oracle-guided
-adversary evades v2 on 70 of the 78 attacks it initially detects (median 68
-queries; v1: 2). (v)~A 27-billion-parameter LLM judge (Qwen3.8-27B), which can only raise scores,
-lifts blind-corpus detection from 6/21 to 21/21 and InjecAgent detection from 2/100
-to 90/100, at 4/24 blind-corpus false positives; a gpt-oss-120b judge gave
-7/24, so the false-positive rate depends strongly on the judge. (vi)~With a
-tool-using agent (gpt-oss-20b), the attacker's call was emitted in 10.0\%
-(8/80) of base and 5.0\% (4/80) of enhanced cases; least-privilege policy executed 0
-of 80 in both (Fisher $p=0.0065$ and $0.12$), a result partly structural to the
-benchmark. We also report and mitigate a resource-exhaustion exposure in the filter.
-Content filtering is a useful audit signal and an LLM judge adds recall at a cost in
-false positives, but least-privilege enforcement is what bounded the damage.
+between agents, and a message built from untrusted content can carry instructions
+that a downstream agent cannot independently reject. We study SecureFlow, middleware
+on the inter-agent edge of LangGraph pipelines, in two forms: v1, a keyword scorer
+(\ourfirst), and v2, which adds input normalization, signed and taint-tracked
+messages, a default-deny tool policy, an optional escalate-only LLM judge, and a
+tamper-evident log. The findings are mixed. v1 forwards 88 of 93 attacks. v2's rules
+forward 15 of 93, but 71.4\% of a blind corpus, and flag only 1.6\% of plain-request
+injections on the independent InjecAgent benchmark (an 86M-parameter learned
+classifier flags none of 100). An oracle-guided adversary evades v2 on 89.7\% of the
+attacks it initially detects. A 27B-parameter LLM judge raises InjecAgent detection
+from 2/100 to 90/100, but false positives depend strongly on the judge. With a
+tool-using agent in the loop, least-privilege policy executed none of the attacker's
+tool calls (0 of 80; Fisher $p=0.0065$ on base cases), a result partly structural to
+the benchmark. Content filtering is a useful audit signal; least-privilege enforcement
+is what bounded the damage. Code, data and replayable model responses are released.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -126,7 +132,7 @@ Lee and Tiwari~\cite{lee2024infection} showed that in multi-agent settings an
 injected instruction can propagate from agent to agent. Industry guidance now
 treats the problem as a first-class risk: the OWASP Top~10 for Agentic
 Applications~\cite{owaspagentic2026} lists agent goal hijack, tool misuse, and
-insecure inter-agent communication among its leading categories.
+insecure inter-agent communication among its ten risk categories.
 
 \subsection{Motivation and history of this work}
 
@@ -134,7 +140,7 @@ This work began as an engineering response to a concrete situation. While buildi
 an agentic pipeline at our institution, we observed that an orchestrator
 summarising fetched web content and forwarding the summary to a worker provided no
 point at which the forwarded text was examined, and no record of what had been
-passed. Our first manuscript evaluated a transparent keyword scorer placed at that
+passed. \Ourfirst{} evaluated a transparent keyword scorer placed at that
 point (``v1'') and reported a largely negative result: the released default
 forwarded 90\% of our attack corpus. That negative result raised the question this
 revision answers: \emph{if content scoring is not enough, what at the same
@@ -167,7 +173,7 @@ numbers exactly and show the exact threshold plateaus.
 evaluated on three corpora, an external benchmark, and ablations---including a
 blind corpus on which it still forwards 71.4\% of attacks.
 \item \textbf{An adaptive-adversary evaluation} of both versions
-(Sec.~\ref{sec:adaptive}), closing the tier-A2 gap that our first manuscript left
+(Sec.~\ref{sec:adaptive}), closing the tier-A2 gap that \ourfirst{} left
 open.
 \item \textbf{Provenance and least-privilege enforcement evaluated under
 assumed compromise} on 1{,}054 external cases (Sec.~\ref{sec:policy}), with the
@@ -181,10 +187,20 @@ agent, with cached responses that replay without any API access.
 (Sec.~\ref{sec:repro}), pinned external data, and a one-command driver.
 \end{enumerate}
 
-Code and data are at \url{https://github.com/piyushrajyadav/Secure-Flow}
+Code and data are at \repourl{}
 (MIT licence).
 
 %% ===========================================================================
+
+\textbf{What is and is not new.} We do not propose a new defense algorithm: the
+taint bit, capability-style tool policy and spotlighting-style marking are adapted
+from prior work~\cite{debenedetti2025camel, costa2025fides, hines2024spotlighting}.
+The contribution is empirical and artifactual: a measured account of where content
+scoring fails at the inter-agent edge (including a blind corpus, an independent
+benchmark, an adaptive adversary and a learned-classifier baseline), a comparison of
+what an LLM judge adds and costs, and an assume-compromise evaluation of lightweight
+enforcement, all re-derivable without model access.
+
 \section{Background and Related Work}
 
 \subsection{From single-turn injection to agent pipelines}
@@ -227,8 +243,7 @@ a per-decision record; we claim no detection advantage over a learned classifier
 Beurer-Kellner et al.~\cite{beurerkellner2025patterns} argue that input and output
 detectors remain fundamentally heuristic and propose design patterns that isolate
 untrusted data from control flow. CaMeL~\cite{debenedetti2025camel} enforces
-capability policies at tool-call time over extracted control and data flow, solving
-77\% of AgentDojo tasks with provable security. Fides~\cite{costa2025fides} tracks
+capability policies at tool-call time over extracted control and data flow, solving 77\% of AgentDojo tasks with provable security against 84\% for an undefended agent. Fides~\cite{costa2025fides} tracks
 confidentiality and integrity labels through an agent planner and enforces policy
 deterministically. Our policy layer is a much lighter-weight relative of these: it
 propagates a single untrusted-taint bit rather than a lattice, and it does not
@@ -459,7 +474,7 @@ is not shown.
 
 \subsection{Corpora}
 
-\textbf{v1 corpus} (30 attacks, 20 benign): the corpus of our first manuscript,
+\textbf{v1 corpus} (30 attacks, 20 benign): the corpus of \ourfirst{},
 six strata of five. v2 rules were tuned on it. \textbf{v2 corpus} (42 / 37, of which
 25 are \emph{hard negatives}: benign text containing security vocabulary,
 non-ASCII text, URLs): written before tuning, but its misses were then used to tune,
@@ -485,8 +500,7 @@ We report \textbf{block evasion rate} (BER): the fraction of attack messages
 forwarded. It characterises the detector, not the pipeline. We do \emph{not} report
 attack success rate, because no model is in the loop; BER upper-bounds it. For the
 policy experiments we report \textbf{attacker goal completed}: every attacker tool
-call in a case is authorized (data-stealing cases need two). All proportions carry
-95\% Wilson intervals~\cite{wilson1927}. False-positive rate (FPR) is the fraction
+call in a case is authorized (data-stealing cases need two). All proportions carry 95\% Wilson intervals~\cite{wilson1927}; exact tests are descriptive and are not corrected for multiple comparisons. False-positive rate (FPR) is the fraction
 of benign messages suppressed.
 
 \subsection{Procedure}
@@ -523,20 +537,19 @@ result files.
 \textbf{Role} & \textbf{Model} & \textbf{Parameters} & \textbf{Ref.} \\
 \midrule
 Classifier & Llama Prompt Guard 2 & 86M (mDeBERTa) & \cite{promptguard2} \\
-Judge & Qwen3.8-27B & $\approx$27.8B, dense & \cite{qwen38} \\
+Judge & Qwen3.8-27B & 27B dense (28B with vision enc.) & \cite{qwen38} \\
 Judge (sensitivity) & gpt-oss-120b         & 116.8B (5.1B active), MoE & \cite{gptoss2025} \\
 Agent & gpt-oss-20b          & 20.9B (3.6B active), MoE & \cite{gptoss2025} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Two provenance notes. First, we found no official technical report for Qwen3.8-27B;
-the sources we located are secondary, so we state only that it is an open-weight,
-dense model of roughly 27.8B parameters released in August 2026, and we did not
-verify its licence or architecture. Second, Llama Prompt Guard 2 accepts at most 512
-tokens; the longest classifier input in our experiments is an InjecAgent tool
-response of about 170 estimated tokens, and no cached classifier request reported more
-than 512 prompt tokens, so no truncation applies.
+Two provenance notes. First, Qwen3.8-27B has an official model card (Apache-2.0
+licence) describing a dense model of 27B parameters, 28B including its vision encoder;
+no technical report accompanies it, so we cite the card. Second, Llama Prompt Guard~2
+accepts at most 512 tokens; the longest classifier input in our experiments is an
+InjecAgent tool response of about 170 estimated tokens, and no cached classifier
+request reported more than 512 prompt tokens, so no truncation applies.
 
 Because the service rate-limits requests, the InjecAgent experiments use fixed-seed
 stratified random samples (equal numbers of direct-harm and data-stealing cases): 100
@@ -564,7 +577,7 @@ safeguard model of the Llama Guard~\cite{inan2023llamaguard} type.
 
 \subsection{v1 reproduction and the threshold plateaus}
 
-Re-executing the frozen v1 scorer reproduces the first manuscript exactly: score
+Re-executing the frozen v1 scorer reproduces \ourfirst{} exactly: score
 distribution $\{0{:}10, 30{:}8, 35{:}5, 40{:}4, 65{:}1, 70{:}1, 75{:}1\}$; ten of
 thirty attacks match no pattern; and exactly the three messages with two fired
 rules exceed $\tau=60$. Table~\ref{tab:sweep1} gives the exact plateaus. At the
@@ -728,7 +741,7 @@ legitimate one---content scoring has almost nothing to match, by v1 or v2.
 \section{Results III: Learned Classifier, Semantic Judge, and an Agent in the Loop}
 \label{sec:llm}
 
-This section adds the model-in-the-loop evidence our first manuscript lacked, using
+This section adds the model-in-the-loop evidence \ourfirst{} lacked, using
 the setup of Sec.~\ref{sec:llmsetup}. InjecAgent samples are 100 cases for detection
 and 80 for the agent; all intervals are 95\% Wilson intervals.
 
@@ -850,9 +863,7 @@ call; the agent was not re-run on redacted input.
 \end{table}
 
 The agent resisted most injections: it emitted the attacker's call in 8 of 80 base
-cases (10.0\%) and, perhaps surprisingly, in only 4 of 80 (5.0\%) when the override
-phrase was added (Fisher exact $p=0.37$ between the two, so we draw no conclusion; we
-did not test whether training against that phrase explains it). The rules filter,
+cases (10.0\%) and, in only 4 of 80 (5.0\%) when the override phrase was added (Fisher exact $p=0.37$ between the two). This contrasts with InjecAgent's report that its hacking prompt nearly doubled the attack success of a ReAct-prompted GPT-4~\cite{zhan2024injecagent}; we did not investigate why, and one untested possibility is that newer models are trained against this widely published phrase. The rules filter,
 which flags the tool response in 80 of 80 enhanced cases but only 1 of 80 base cases
 (and not one of the eight that succeeded), therefore removes every enhanced attempt
 and none of the base ones. Every emitted attacker call was denied under the
@@ -986,7 +997,7 @@ hardware). v2 scoring (median 0.69\,ms) is about $37\times$ slower than v1 (0.01
 short messages and grows about linearly with length, at roughly 9--11\,ms per
 kilobyte, so a 3\,KB message costs on the order of 26\,ms. Signing, verification and tool authorization are cheap relative
 to scoring. All of this is small beside a model call (seconds), but it is not
-negligible, and our first manuscript's ``17\,$\mu$s'' figure applies to v1 only.
+negligible, and \ourfirst{}'s ``17\,$\mu$s'' figure applies to v1 only.
 
 \begin{table}[t]
 \centering
@@ -1122,7 +1133,7 @@ Suppression does not constrain tools the application does not route through
 \subsection{Reproducibility}
 \label{sec:repro}
 
-Everything is public. Code: \url{https://github.com/piyushrajyadav/Secure-Flow}.
+Everything is public. Code: \repourl{}.
 The released test data are under \texttt{data/corpora/} (\texttt{v1.jsonl},
 \texttt{v2.jsonl}, \texttt{v3.jsonl}; SHA-256 checksums in \texttt{MANIFEST.json}); all
 result files are under \texttt{data/results/}, each stamped with the producing git
@@ -1192,10 +1203,12 @@ isolation design rather than in place of one. We would rather report a defense w
 detector does not generalize than a number that does not mean what it says.
 
 %% ===========================================================================
+\ifanon\else
 \section*{Acknowledgment}
 The authors thank the Department of Computer Science and Engineering, Institute of
 Engineering and Management, Kolkata, for its support, and the open-source
 communities behind LangGraph, LangChain, and Ollama~\cite{ollama}.
+\fi
 
 \begin{thebibliography}{99}
 
@@ -1223,7 +1236,7 @@ injection in multi-agent systems,''
 \bibitem{owaspagentic2026}
 {OWASP GenAI Security Project},
 ``OWASP top 10 for agentic applications for 2026,'' Dec. 2025. [Online].
-Available: \url{https://genai.owasp.org/}.
+Available: \url{https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/}.
 
 \bibitem{perez2022ignore}
 F.~Perez and I.~Ribeiro,
@@ -1242,7 +1255,8 @@ E.~Debenedetti, J.~Zhang, M.~Balunovi\'{c}, L.~Beurer-Kellner, M.~Fischer,
 and F.~Tram\`{e}r,
 ``AgentDojo: A dynamic environment to evaluate prompt injection attacks and
 defenses for LLM agents,''
-\emph{arXiv preprint arXiv:2406.13352}, 2024.
+in \emph{Advances in Neural Information Processing Systems (NeurIPS), Datasets and
+Benchmarks Track}, 2024; \emph{arXiv preprint arXiv:2406.13352}.
 
 \bibitem{zhan2024injecagent}
 Q.~Zhan, Z.~Liang, Z.~Ying, and D.~Kang,
@@ -1270,8 +1284,7 @@ K.~Hines, G.~Lopez, M.~Hall, F.~Zarfati, Y.~Zunger, and E.~Kiciman,
 \emph{arXiv preprint arXiv:2403.14720}, 2024.
 
 \bibitem{beurerkellner2025patterns}
-L.~Beurer-Kellner, B.~Buesser, A.-M. Cre\c{t}u, E.~Debenedetti, F.~Tram\`{e}r,
-\emph{et al.},
+L.~Beurer-Kellner \emph{et al.},
 ``Design patterns for securing LLM agents against prompt injections,''
 \emph{arXiv preprint arXiv:2506.08837}, 2025.
 
@@ -1295,8 +1308,8 @@ S.~Tople, L.~Wutschitz, and S.~Zanella-B\'{e}guelin,
 Available: \url{https://www.llama.com/docs/model-cards-and-prompt-formats/prompt-guard/}.
 
 \bibitem{qwen38}
-{Qwen Team, Alibaba Group}, ``Qwen3.8-27B (open weights),'' Aug. 2026. No technical
-report was located; weights are distributed through Hugging Face and ModelScope.
+{Qwen Team, Alibaba Group}, ``Qwen3.8-27B,'' model card (open weights, Apache-2.0),
+Aug. 2026. [Online]. Available: \url{https://huggingface.co/Qwen/Qwen3.8-27B}.
 
 \bibitem{rfc2104}
 H.~Krawczyk, M.~Bellare, and R.~Canetti,
@@ -1316,7 +1329,7 @@ Guidance on risk management,'' 2023.
 \bibitem{nist2023airmf}
 {National Institute of Standards and Technology},
 ``Artificial intelligence risk management framework (AI RMF 1.0),''
-NIST, Tech. Rep., 2023.
+NIST AI 100-1, Jan. 2023.
 
 \bibitem{owasp2025}
 {OWASP Foundation},

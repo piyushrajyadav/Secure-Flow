@@ -7,6 +7,7 @@ Exits non-zero (and lists the failures) if the manuscript and the result files d
 """
 import json
 import os
+import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -144,6 +145,21 @@ expect("agent model", E2E["agent_model"] == "openai/gpt-oss-20b", ["gpt-oss-20b"
 expect("judge models", J27["judge_model"] == "qwen/qwen3.8-27b" and J120["judge_model"] == "openai/gpt-oss-120b",
        ["Qwen3.8-27B", "gpt-oss-120b"])
 expect("classifier model", CL["model"] == "meta-llama/llama-prompt-guard-2-86m", ["Llama Prompt Guard"])
+
+# ---- bibliography hygiene and abstract length ----------------------------------------------------
+RAW = open(os.path.join(ROOT, "paper", "main.tex"), encoding="utf-8").read()
+body, _, bibsec = RAW.partition("\\begin{thebibliography}")
+cited = {k.strip() for m in re.findall(r"\\cite\{([^}]*)\}", body) for k in m.split(",")}
+defined = set(re.findall(r"\\bibitem\{([^}]*)\}", bibsec))
+if cited - defined:
+    fails.append(f"CITED BUT NOT IN BIBLIOGRAPHY: {sorted(cited - defined)}")
+if defined - cited:
+    fails.append(f"IN BIBLIOGRAPHY BUT NEVER CITED: {sorted(defined - cited)}")
+abstract = RAW[RAW.index("\\begin{abstract}"):RAW.index("\\end{abstract}")]
+words = len(re.sub(r"\\[A-Za-z]+|[{}~$]", " ", abstract).split()) - 1
+if words > 220:
+    fails.append(f"ABSTRACT TOO LONG: {words} words (limit 220; many venues cap at 150-250)")
+print(f"abstract: {words} words; citations: {len(cited)} cited / {len(defined)} defined")
 
 # ---- the manuscript must not name the inference provider --------------------------------------------
 import re
