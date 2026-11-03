@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+message: "If you use SecureFlow or its evaluation data, please cite it as below."
+title: "SecureFlow: Security middleware and evaluation suite for multi-agent LLM systems"
+type: software
+version: 2.0.0
+license: MIT
+repository-code: "https://github.com/piyushrajyadav/Secure-Flow"
+authors:
+  - family-names: Yadav
+    given-names: Piyush
+  - family-names: Kundu
+    given-names: Pushpita
+  - family-names: Mukherjee
+    given-names: Sukanya
+keywords: [prompt injection, multi-agent systems, LLM security, least privilege, information-flow control]

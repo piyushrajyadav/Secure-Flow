@@ -1,4 +1,11 @@
 {
+  "provenance": {
+    "code_commit": "560ed236b40d9f05cd740924572e3a8c9bd666a2",
+    "working_tree_clean": true,
+    "generated_utc": "2026-11-03T07:57:48+00:00",
+    "python": "3.12.10",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
   "hardware": {
     "platform": "Windows-11-10.0.26200-SP0",
     "python": "3.12.10",
@@ -13,99 +20,99 @@
   "results": {
     "v1 scoring, short (74 chars)": {
       "n": 20000,
-      "mean_ms": 0.013,
-      "median_ms": 0.009,
-      "p95_ms": 0.0287,
-      "p99_ms": 0.0482,
-      "max_ms": 0.438
+      "mean_ms": 0.025,
+      "median_ms": 0.0189,
+      "p95_ms": 0.043,
+      "p99_ms": 0.1086,
+      "max_ms": 18.826
     },
     "v1 scoring, 1 KB": {
       "n": 5000,
-      "mean_ms": 0.0254,
-      "median_ms": 0.0176,
-      "p95_ms": 0.0562,
-      "p99_ms": 0.1002,
-      "max_ms": 0.788
+      "mean_ms": 0.0311,
+      "median_ms": 0.0268,
+      "p95_ms": 0.0576,
+      "p99_ms": 0.0999,
+      "max_ms": 1.009
     },
     "v1 scoring, 3 KB": {
       "n": 2000,
-      "mean_ms": 0.0464,
-      "median_ms": 0.0353,
-      "p95_ms": 0.1048,
-      "p99_ms": 0.2005,
-      "max_ms": 0.853
+      "mean_ms": 0.0383,
+      "median_ms": 0.0366,
+      "p95_ms": 0.0493,
+      "p99_ms": 0.078,
+      "max_ms": 0.196
     },
     "v2 scoring, short (74 chars)": {
       "n": 5000,
-      "mean_ms": 0.9254,
-      "median_ms": 0.7113,
-      "p95_ms": 1.9745,
-      "p99_ms": 2.8284,
-      "max_ms": 33.078
+      "mean_ms": 0.8991,
+      "median_ms": 0.692,
+      "p95_ms": 1.9282,
+      "p99_ms": 2.7947,
+      "max_ms": 8.063
     },
     "v2 scoring, attack message": {
       "n": 5000,
-      "mean_ms": 0.6347,
-      "median_ms": 0.4791,
-      "p95_ms": 1.413,
-      "p99_ms": 1.9588,
-      "max_ms": 22.301
+      "mean_ms": 0.6581,
+      "median_ms": 0.4995,
+      "p95_ms": 1.3588,
+      "p99_ms": 2.0622,
+      "max_ms": 34.601
     },
     "v2 scoring, 1 KB": {
       "n": 2000,
-      "mean_ms": 11.8494,
-      "median_ms": 10.1438,
-      "p95_ms": 20.9008,
-      "p99_ms": 28.6872,
-      "max_ms": 86.736
+      "mean_ms": 11.6696,
+      "median_ms": 10.8087,
+      "p95_ms": 19.3819,
+      "p99_ms": 25.106,
+      "max_ms": 40.669
     },
     "v2 scoring, 3 KB": {
       "n": 1000,
-      "mean_ms": 40.8458,
-      "median_ms": 40.1998,
-      "p95_ms": 57.9666,
-      "p99_ms": 95.6086,
-      "max_ms": 127.31
+      "mean_ms": 28.9772,
+      "median_ms": 26.2641,
+      "p95_ms": 45.759,
+      "p99_ms": 67.088,
+      "max_ms": 111.777
     },
     "v2 full intercept incl. synchronous hash-chained log write, short": {
       "n": 3000,
-      "mean_ms": 2.6323,
-      "median_ms": 2.2967,
-      "p95_ms": 4.5892,
-      "p99_ms": 5.9051,
-      "max_ms": 30.547
+      "mean_ms": 1.8935,
+      "median_ms": 1.6596,
+      "p95_ms": 3.547,
+      "p99_ms": 4.7888,
+      "max_ms": 21.854
     },
     "v2 full intercept incl. log write, 3 KB": {
       "n": 1000,
-      "mean_ms": 42.2835,
-      "median_ms": 39.6419,
-      "p95_ms": 69.3086,
-      "p99_ms": 113.0492,
-      "max_ms": 179.612
+      "mean_ms": 42.1715,
+      "median_ms": 40.4875,
+      "p95_ms": 72.5247,
+      "p99_ms": 117.2615,
+      "max_ms": 139.442
     },
     "envelope sign": {
       "n": 5000,
-      "mean_ms": 0.0514,
-      "median_ms": 0.0457,
-      "p95_ms": 0.1029,
-      "p99_ms": 0.1648,
-      "max_ms": 2.113
+      "mean_ms": 0.035,
+      "median_ms": 0.0286,
+      "p95_ms": 0.0576,
+      "p99_ms": 0.1096,
+      "max_ms": 0.9
     },
     "envelope verify (HMAC + replay cache)": {
       "n": 5000,
-      "mean_ms": 0.0312,
-      "median_ms": 0.028,
-      "p95_ms": 0.057,
-      "p99_ms": 0.1016,
-      "max_ms": 0.483
+      "mean_ms": 0.0301,
+      "median_ms": 0.0232,
+      "p95_ms": 0.0582,
+      "p99_ms": 0.0882,
+      "max_ms": 0.347
     },
     "tool authorize (granted READ tool, argument scan on)": {
       "n": 5000,
-      "mean_ms": 0.8529,
-      "median_ms": 0.6673,
-      "p95_ms": 1.7456,
-      "p99_ms": 2.4876,
-      "max_ms": 4.62
+      "mean_ms": 1.2216,
+      "median_ms": 1.107,
+      "p95_ms": 2.1887,
+      "p99_ms": 3.1572,
+      "max_ms": 43.229
     }
   }
 }

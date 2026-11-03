@@ -102,6 +102,25 @@ them as regression tests rather than a security guarantee.
 including a log write measured ~4 ms/message. Negligible next to an LLM call, but not "real-time at
 0.2 ms" as v1's README claimed.
 
+## 🔬 Research artifact
+The accompanying paper is in [`paper/`](paper/) (`main.tex`, `main.pdf`). Every number in it is produced by
+released code and data, and `python paper/check_numbers.py` verifies that the manuscript matches `data/results/`.
+
+```bash
+python -m experiments.run_all           # reproduce all results (~7 min, no model/GPU; needs network once for InjecAgent)
+python -m experiments.run_all --offline # skip the external benchmark
+python paper/check_numbers.py           # manuscript <-> results consistency
+```
+Headline results (details, intervals and caveats in the paper): on the **independent InjecAgent benchmark** the rules
+layer flags only **1.6 %** of plain-request injections (100 % on the "enhanced" variant only because every case carries
+one identical override phrase); an **oracle-guided adaptive attacker** evades v2 on **89.7 %** of the attacks it
+initially detects (median 68 queries; v1: 2); but under an **assumed-compromise** evaluation, least-privilege tool
+policy with taint gating completes the attacker's goal in **0 / 1054** cases (vs 1054 / 1054 without it, a result that is
+partly structural to the benchmark; see the paper). Test data: [`data/`](data/).
+
+Scoring cost is linear in message length (~9-11 ms/KB measured), so messages over 32,768 characters are **not scanned and
+are blocked** by default (`RiskScorer(max_scan_chars=..., oversize_action="block"|"window"|"scan_all")`).
+
 ## 🧭 What this does *not* do
 - It does not make prompt injection impossible. Treat detection as a speed bump and the **tool policy + human approval** as the actual boundary.
 - HMAC signing uses shared secrets (fine inside one process / trust domain). Across trust domains use asymmetric signatures.
@@ -115,7 +134,7 @@ pip install -r requirements.txt         # Python 3.9-3.13 recommended for the La
 python -m examples.offline_demo         # architecture walkthrough, no LLM
 python -m experiments.evaluate --misses # before/after detection numbers
 python -m experiments.attack_sim        # original ASR simulation
-python -m pytest tests                  # 68 tests
+python -m pytest tests                  # 74 tests
 python dashboard/app.py                 # Flask dashboard
 python demo.py                          # LangGraph + Ollama demo (needs Ollama running)
 ```

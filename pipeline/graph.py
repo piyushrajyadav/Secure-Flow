@@ -5,6 +5,9 @@ from agents.orchestrator import orchestrator_node
 from agents.worker import worker_node, worker_node_no_secureflow
 from secureflow import SecureFlowMiddleware
 
+BLOCKED_PLACEHOLDER = "[message removed by SecureFlow]"
+
+
 class PipelineState(TypedDict):
     """The state dictionary for the LangGraph pipeline."""
     user_task: str
@@ -39,20 +42,33 @@ def build_secure_pipeline(threshold: int = 60, verbose: bool = True) -> Tuple[An
         )
         if result is None:
             state["status"] = "blocked"
+            state["message"] = BLOCKED_PLACEHOLDER      # the suppressed payload must not stay in shared state
         else:
             state["status"] = "passed"
         return state
+
+    def blocked_node(state: PipelineState) -> PipelineState:
+        """Terminal node for suppressed messages: the worker is never invoked."""
+        state["worker_response"] = "Message was blocked by SecureFlow. No action taken."
+        state["executed_malicious"] = False
+        return state
+
+    def route(state: PipelineState) -> str:
+        return "blocked" if state.get("status") == "blocked" else "worker"
 
     graph_builder = StateGraph(PipelineState)
     
     graph_builder.add_node("orchestrator", orchestrator_node)
     graph_builder.add_node("secureflow", secureflow_node)
     graph_builder.add_node("worker", worker_node)
-    
+    graph_builder.add_node("blocked", blocked_node)
+
     graph_builder.set_entry_point("orchestrator")
     graph_builder.add_edge("orchestrator", "secureflow")
-    graph_builder.add_edge("secureflow", "worker")
+    # Architectural (not cooperative) enforcement: a blocked message cannot reach the worker.
+    graph_builder.add_conditional_edges("secureflow", route, {"worker": "worker", "blocked": "blocked"})
     graph_builder.add_edge("worker", END)
+    graph_builder.add_edge("blocked", END)
     
     graph = graph_builder.compile()
     return graph, middleware

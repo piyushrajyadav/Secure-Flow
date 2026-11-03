@@ -1,0 +1,29 @@
+{
+  "provenance": {
+    "code_commit": "560ed236b40d9f05cd740924572e3a8c9bd666a2",
+    "working_tree_clean": true,
+    "generated_utc": "2026-11-03T07:51:56+00:00",
+    "python": "3.12.10",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "files": {
+    "v1.jsonl": {
+      "sha256": "b9c01c8c4322f4c0e1f627a97950e3ddd886d54459bb0146aba7e098a0e4d9ab",
+      "attacks": 30,
+      "benign": 20,
+      "note": "Original corpus of the first manuscript (30 attacks / 20 benign). v2 rules were tuned on it."
+    },
+    "v2.jsonl": {
+      "sha256": "5a079ca847679e6180b8a582554fbb5948262975dfbea0639487733797781547",
+      "attacks": 42,
+      "benign": 37,
+      "note": "Written before v2 tuning; its misses were then used to tune, so it is NOT held-out."
+    },
+    "v3.jsonl": {
+      "sha256": "58b94af1cbb64d70e2c8235ed7f0c97452c25f0bb97dcc770815092aedb77b48",
+      "attacks": 21,
+      "benign": 24,
+      "note": "Blind: written after tuning, never tuned on. Contains known weak spots (non-English, semantic)."
+    }
+  }
+}

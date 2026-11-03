@@ -1,4 +1,11 @@
 {
+  "provenance": {
+    "code_commit": "560ed236b40d9f05cd740924572e3a8c9bd666a2",
+    "working_tree_clean": true,
+    "generated_utc": "2026-11-03T07:55:30+00:00",
+    "python": "3.12.10",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
   "n_seeds": 93,
   "rng_seed": 20260811,
   "depth2_samples": 1500,
@@ -86,7 +93,7 @@
         "typo+hyphen": 1,
         "typo+synonym": 1
       },
-      "seconds": 82.4
+      "seconds": 81.1
     },
     "v2 rules, untrusted (tau=40)": {
       "seeds": 93,
@@ -134,7 +141,7 @@
         "filler+synonym": 1,
         "synonym+synonym": 1
       },
-      "seconds": 100.8
+      "seconds": 63.3
     }
   },
   "examples": [
