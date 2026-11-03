@@ -81,7 +81,7 @@ def chat(model: str, messages: list, tools: list = None, max_tokens: int = 400, 
             if rem is not None and int(rem) < est_tokens:
                 time.sleep(min(70, _secs(hdr.get("x-ratelimit-reset-tokens", "5s")) + 0.5))
             break
-        except urllib.error.HTTPError as e:
+        except urllib.error.HTTPError as e:                     # must precede URLError (its base class)
             text = e.read().decode("utf-8", "replace")
             if e.code == 429 and attempt < 8:
                 wait = float(e.headers.get("retry-after", "10"))
@@ -99,6 +99,11 @@ def chat(model: str, messages: list, tools: list = None, max_tokens: int = 400, 
                 time.sleep(5 * attempt)
                 continue
             raise RuntimeError(f"Groq HTTP {e.code}: {text[:200]}")
+        except (urllib.error.URLError, TimeoutError, ConnectionError, OSError) as e:
+            if attempt < 8:                                     # transient DNS / connection / timeout
+                time.sleep(min(60, 3 * attempt))
+                continue
+            raise RuntimeError(f"Groq network error after {attempt} attempts: {type(e).__name__}")
     with _lock:
         cache[k] = resp
         os.makedirs(os.path.dirname(CACHE), exist_ok=True)
