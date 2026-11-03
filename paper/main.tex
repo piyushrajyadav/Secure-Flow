@@ -534,11 +534,14 @@ result files.
 \textbf{Role} & \textbf{Model} & \textbf{Parameters} & \textbf{Ref.} \\
 \midrule
 Classifier & Llama Prompt Guard 2 & 86M (mDeBERTa) & \cite{promptguard2} \\
-Judge & Qwen3.8-27B & 27B dense (28B with vision enc.) & \cite{qwen38} \\
+Judge & Qwen3.8-27B & 27B dense\textsuperscript{a} & \cite{qwen38} \\
 Judge (sensitivity) & gpt-oss-120b         & 116.8B (5.1B active), MoE & \cite{gptoss2025} \\
 Agent & gpt-oss-20b          & 20.9B (3.6B active), MoE & \cite{gptoss2025} \\
+Agent (second) & Qwen3.8-27B & 27B dense\textsuperscript{a} & \cite{qwen38} \\
 \bottomrule
 \end{tabular}
+\\[2pt]
+\footnotesize\textsuperscript{a}28B including its vision encoder.
 \end{table}
 
 Two provenance notes. First, Qwen3.8-27B has an official model card (Apache-2.0

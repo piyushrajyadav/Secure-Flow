@@ -140,6 +140,17 @@ for tag, files in (("llm_*", ("llm_promptguard", "llm_judge_27b", "llm_judge_120
     for n in files:
         expect(f"{n} stamped clean", R(n)["provenance"]["working_tree_clean"] is True)
 
+# ---- second agent and positive controls --------------------------------------------------------------
+EQ, CAP_Q, CAP_G = R("llm_e2e_qwen27b"), R("llm_capability_qwen27b"), R("llm_capability_gptoss20b")
+qv = EQ["variants"]
+expect("second agent", all((qv[v]["undefended: attacker call emitted"]["k"], qv[v]["undefended: attacker call emitted"]["n"]) == (0, 50) for v in ("base", "enh"))
+       and qv["base"]["undefended: attacker call emitted"]["ci95"][1] == 7.1 and EQ["agent_model"] == "qwen/qwen3.8-27b"
+       and not any(c["calls"] for c in EQ["per_case"]))
+expect("positive controls", (CAP_Q["attacker_tool_called_when_USER_requests_it"]["k"], CAP_Q["attacker_tool_called_when_USER_requests_it"]["n"]) == (9, 20)
+       and (CAP_G["attacker_tool_called_when_USER_requests_it"]["k"], CAP_G["attacker_tool_called_when_USER_requests_it"]["n"]) == (18, 20))
+for n in ("llm_e2e_qwen27b", "llm_capability_qwen27b", "llm_capability_gptoss20b"):
+    expect(f"{n} stamped clean", R(n)["provenance"]["working_tree_clean"] is True)
+
 # ---- models named in the manuscript must be the ones recorded in the result files ----------------
 expect("agent model", E2E["agent_model"] == "openai/gpt-oss-20b", ["gpt-oss-20b"])
 expect("judge models", J27["judge_model"] == "qwen/qwen3.8-27b" and J120["judge_model"] == "openai/gpt-oss-120b",
