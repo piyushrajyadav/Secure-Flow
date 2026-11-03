@@ -58,13 +58,20 @@ Respond with ONLY a JSON object: {{"malicious_probability": <number 0 to 1>, "re
 
 
 class LLMJudge:
-    def __init__(self, llm_call: Callable[[str], str], max_chars: int = 4000):
+    def __init__(self, llm_call: Callable[[str], str], max_chars: int = 4000,
+                 boundary_fn: Optional[Callable[[str], str]] = None):
+        """
+        ``boundary_fn(text) -> marker`` lets evaluations make the prompt deterministic (so model responses can
+        be cached and replayed). In production leave it None: a fresh random boundary per call is what stops
+        the text under review from forging its own end marker.
+        """
         self.llm_call = llm_call
         self.max_chars = max_chars
+        self.boundary_fn = boundary_fn
         self.last_reason = ""
 
     def judge(self, text: str, result: ScoreResult) -> Optional[float]:
-        boundary = "=====" + secrets.token_hex(8) + "====="
+        boundary = self.boundary_fn(text) if self.boundary_fn else "=====" + secrets.token_hex(8) + "====="
         body = text[: self.max_chars].replace(boundary, "")
         raw = self.llm_call(_PROMPT.format(boundary=boundary, message=body))
         m = re.search(r"\{.*?\}", raw or "", re.DOTALL)

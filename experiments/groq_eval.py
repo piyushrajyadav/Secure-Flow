@@ -17,6 +17,7 @@ and the rules-filter condition ASSUMES a model shown a redacted placeholder cann
 """
 import argparse
 import ast
+import hashlib
 import json
 import os
 import random
@@ -38,7 +39,7 @@ PG_MODEL = "meta-llama/llama-prompt-guard-2-86m"
 JUDGE_MODEL = "openai/gpt-oss-120b"
 AGENT_MODEL = "openai/gpt-oss-20b"
 RULES = RiskScorer(threshold=60)
-OUT = "data/results/"
+OUT = os.environ.get("SECUREFLOW_RESULTS_DIR", "data/results").rstrip("/") + "/"
 
 
 # ------------------------------------------------------------------ sampling
@@ -119,7 +120,8 @@ def run_judge(n_each):
     def ask(prompt):
         r = G.chat(JUDGE_MODEL, [{"role": "user", "content": prompt}], max_tokens=700, est_tokens=1800, reasoning_effort="low")
         return (r.get("message") or {}).get("content") or ""
-    judge = LLMJudge(ask)
+    # deterministic per-text boundary so judge requests are cacheable/replayable (production uses a random one)
+    judge = LLMJudge(ask, boundary_fn=lambda text: "=====" + hashlib.sha256(text.encode()).hexdigest()[:16] + "=====")
 
     def p_of(text):
         # Only the judge's own "unparseable output" (None) counts as no-opinion. Transport/API failures

@@ -1,0 +1,349 @@
+{
+  "provenance": {
+    "code_commit": "14163af8df3702462d25be4015b5814c7e6bf407",
+    "working_tree_clean": true,
+    "generated_utc": "2026-11-03T08:46:36+00:00",
+    "python": "3.12.10",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "model": "meta-llama/llama-prompt-guard-2-86m",
+  "threshold": 0.5,
+  "n_injecagent_per_kind": 50,
+  "sets": {
+    "v1 corpus": {
+      "scored_ok": {
+        "attacks": 30,
+        "benign": 20,
+        "errors": 0
+      },
+      "prompt_guard_2": {
+        "detected": {
+          "k": 14,
+          "n": 30,
+          "pct": 46.7,
+          "ci95": [
+            30.2,
+            63.9
+          ]
+        },
+        "false_positives": {
+          "k": 0,
+          "n": 20,
+          "pct": 0.0,
+          "ci95": [
+            0.0,
+            16.1
+          ]
+        }
+      },
+      "v2_rules": {
+        "detected": {
+          "k": 30,
+          "n": 30,
+          "pct": 100.0,
+          "ci95": [
+            88.6,
+            100.0
+          ]
+        },
+        "false_positives": {
+          "k": 0,
+          "n": 20,
+          "pct": 0.0,
+          "ci95": [
+            0.0,
+            16.1
+          ]
+        }
+      },
+      "rules_OR_prompt_guard": {
+        "detected": {
+          "k": 30,
+          "n": 30,
+          "pct": 100.0,
+          "ci95": [
+            88.6,
+            100.0
+          ]
+        },
+        "false_positives": {
+          "k": 0,
+          "n": 20,
+          "pct": 0.0,
+          "ci95": [
+            0.0,
+            16.1
+          ]
+        }
+      }
+    },
+    "v2 corpus": {
+      "scored_ok": {
+        "attacks": 42,
+        "benign": 37,
+        "errors": 0
+      },
+      "prompt_guard_2": {
+        "detected": {
+          "k": 17,
+          "n": 42,
+          "pct": 40.5,
+          "ci95": [
+            27.0,
+            55.5
+          ]
+        },
+        "false_positives": {
+          "k": 0,
+          "n": 37,
+          "pct": 0.0,
+          "ci95": [
+            0.0,
+            9.4
+          ]
+        }
+      },
+      "v2_rules": {
+        "detected": {
+          "k": 42,
+          "n": 42,
+          "pct": 100.0,
+          "ci95": [
+            91.6,
+            100.0
+          ]
+        },
+        "false_positives": {
+          "k": 0,
+          "n": 37,
+          "pct": 0.0,
+          "ci95": [
+            0.0,
+            9.4
+          ]
+        }
+      },
+      "rules_OR_prompt_guard": {
+        "detected": {
+          "k": 42,
+          "n": 42,
+          "pct": 100.0,
+          "ci95": [
+            91.6,
+            100.0
+          ]
+        },
+        "false_positives": {
+          "k": 0,
+          "n": 37,
+          "pct": 0.0,
+          "ci95": [
+            0.0,
+            9.4
+          ]
+        }
+      }
+    },
+    "v3 blind corpus": {
+      "scored_ok": {
+        "attacks": 21,
+        "benign": 24,
+        "errors": 0
+      },
+      "prompt_guard_2": {
+        "detected": {
+          "k": 9,
+          "n": 21,
+          "pct": 42.9,
+          "ci95": [
+            24.5,
+            63.5
+          ]
+        },
+        "false_positives": {
+          "k": 3,
+          "n": 24,
+          "pct": 12.5,
+          "ci95": [
+            4.3,
+            31.0
+          ]
+        }
+      },
+      "v2_rules": {
+        "detected": {
+          "k": 6,
+          "n": 21,
+          "pct": 28.6,
+          "ci95": [
+            13.8,
+            50.0
+          ]
+        },
+        "false_positives": {
+          "k": 3,
+          "n": 24,
+          "pct": 12.5,
+          "ci95": [
+            4.3,
+            31.0
+          ]
+        }
+      },
+      "rules_OR_prompt_guard": {
+        "detected": {
+          "k": 12,
+          "n": 21,
+          "pct": 57.1,
+          "ci95": [
+            36.5,
+            75.5
+          ]
+        },
+        "false_positives": {
+          "k": 5,
+          "n": 24,
+          "pct": 20.8,
+          "ci95": [
+            9.2,
+            40.5
+          ]
+        }
+      }
+    },
+    "InjecAgent base tool responses (sample)": {
+      "scored_ok": {
+        "attacks": 100,
+        "benign": 34,
+        "errors": 0
+      },
+      "prompt_guard_2": {
+        "detected": {
+          "k": 0,
+          "n": 100,
+          "pct": 0.0,
+          "ci95": [
+            0.0,
+            3.7
+          ]
+        },
+        "false_positives": {
+          "k": 0,
+          "n": 34,
+          "pct": 0.0,
+          "ci95": [
+            0.0,
+            10.2
+          ]
+        }
+      },
+      "v2_rules": {
+        "detected": {
+          "k": 2,
+          "n": 100,
+          "pct": 2.0,
+          "ci95": [
+            0.6,
+            7.0
+          ]
+        },
+        "false_positives": {
+          "k": 0,
+          "n": 34,
+          "pct": 0.0,
+          "ci95": [
+            0.0,
+            10.2
+          ]
+        }
+      },
+      "rules_OR_prompt_guard": {
+        "detected": {
+          "k": 2,
+          "n": 100,
+          "pct": 2.0,
+          "ci95": [
+            0.6,
+            7.0
+          ]
+        },
+        "false_positives": {
+          "k": 0,
+          "n": 34,
+          "pct": 0.0,
+          "ci95": [
+            0.0,
+            10.2
+          ]
+        }
+      }
+    },
+    "InjecAgent enhanced tool responses (sample)": {
+      "scored_ok": {
+        "attacks": 100,
+        "benign": 34,
+        "errors": 0
+      },
+      "prompt_guard_2": {
+        "detected": {
+          "k": 100,
+          "n": 100,
+          "pct": 100.0,
+          "ci95": [
+            96.3,
+            100.0
+          ]
+        },
+        "false_positives": {
+          "k": 0,
+          "n": 34,
+          "pct": 0.0,
+          "ci95": [
+            0.0,
+            10.2
+          ]
+        }
+      },
+      "v2_rules": {
+        "detected": {
+          "k": 100,
+          "n": 100,
+          "pct": 100.0,
+          "ci95": [
+            96.3,
+            100.0
+          ]
+        },
+        "false_positives": {
+          "k": 0,
+          "n": 34,
+          "pct": 0.0,
+          "ci95": [
+            0.0,
+            10.2
+          ]
+        }
+      },
+      "rules_OR_prompt_guard": {
+        "detected": {
+          "k": 100,
+          "n": 100,
+          "pct": 100.0,
+          "ci95": [
+            96.3,
+            100.0
+          ]
+        },
+        "false_positives": {
+          "k": 0,
+          "n": 34,
+          "pct": 0.0,
+          "ci95": [
+            0.0,
+            10.2
+          ]
+        }
+      }
+    }
+  }
+}
