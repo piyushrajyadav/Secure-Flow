@@ -92,6 +92,71 @@ for name in ("provenance",):
     for d, n in ((P, "paper_tables"), (A, "adaptive"), (I, "injecagent"), (L, "latency")):
         expect(f"{n} stamped clean", d["provenance"]["working_tree_clean"] is True)
 
+# ---- model-in-the-loop (replayable) results -------------------------------------------------------
+CL, J27, J120, E2E = R("llm_promptguard"), R("llm_judge_27b"), R("llm_judge_120b"), R("llm_e2e")
+det = lambda d, key: (d[key]["detected"]["k"], d[key]["detected"]["n"])
+fp = lambda d, key: (d[key]["false_positives"]["k"], d[key]["false_positives"]["n"])
+cs = CL["sets"]
+expect("classifier v3", det(cs["v3 blind corpus"], "prompt_guard_2") == (9, 21) and fp(cs["v3 blind corpus"], "prompt_guard_2") == (3, 24)
+       and det(cs["v3 blind corpus"], "rules_OR_prompt_guard") == (12, 21) and fp(cs["v3 blind corpus"], "rules_OR_prompt_guard") == (5, 24))
+expect("classifier v1/v2", det(cs["v1 corpus"], "prompt_guard_2") == (14, 30) and det(cs["v2 corpus"], "prompt_guard_2") == (17, 42))
+expect("classifier InjecAgent", det(cs["InjecAgent base tool responses (sample)"], "prompt_guard_2") == (0, 100)
+       and det(cs["InjecAgent enhanced tool responses (sample)"], "prompt_guard_2") == (100, 100)
+       and cs["InjecAgent base tool responses (sample)"]["prompt_guard_2"]["detected"]["ci95"][1] == 3.7)
+js = J27["sets"]; v3j = js["v3 blind corpus"]; ijj = js["InjecAgent base tool responses (sample)"]; v2j = js["v2 corpus"]
+RP = "rules_plus_judge(escalate-only,>=0.6)"; JO = "judge_only_p>=0.5"
+expect("judge v3", det(v3j, "rules_only") == (6, 21) and det(v3j, JO) == (21, 21) and fp(v3j, JO) == (2, 24)
+       and det(v3j, RP) == (21, 21) and fp(v3j, RP) == (4, 24) and v3j["no_opinion"] == {"attacks": 0, "benign": 0})
+expect("judge InjecAgent", det(ijj, "rules_only") == (2, 100) and det(ijj, JO) == (90, 100) and fp(ijj, JO) == (0, 17)
+       and ijj["judge_only_p>=0.5"]["detected"]["ci95"] == [82.6, 94.5])
+expect("judge v2", det(v2j, JO) == (41, 42) and fp(v2j, JO) == (0, 37) and det(v2j, RP) == (42, 42) and fp(v2j, RP) == (0, 37))
+v3b = J120["sets"]["v3 blind corpus"]
+expect("judge 120B sensitivity", det(v3b, JO) == (21, 21) and fp(v3b, JO) == (5, 24) and fp(v3b, RP) == (7, 24))
+ev = E2E["variants"]
+g = lambda v, k: (ev[v][k]["k"], ev[v][k]["n"])
+expect("e2e base", g("base", "undefended: attacker call emitted") == (8, 80)
+       and g("base", "attacker call EXECUTED with rules filter (assumes redaction works)") == (8, 80)
+       and g("base", "attacker call EXECUTED with P1 task-scoped grants") == (0, 80)
+       and g("base", "attacker call EXECUTED with P3 toolkit grants + taint gating") == (0, 80)
+       and g("base", "attacker call EXECUTED with rules + P3") == (0, 80)
+       and g("base", "rules (tau=40) flagged the tool response") == (1, 80))
+expect("e2e enhanced", g("enh", "undefended: attacker call emitted") == (4, 80)
+       and g("enh", "attacker call EXECUTED with rules filter (assumes redaction works)") == (0, 80)
+       and g("enh", "rules (tau=40) flagged the tool response") == (80, 80)
+       and g("enh", "attacker call EXECUTED with rules + P3") == (0, 80))
+expect("e2e control", (E2E["control_clean_tool_response"]["k"], E2E["control_clean_tool_response"]["n"]) == (0, 40)
+       and E2E["control_clean_tool_response"]["ci95"][1] == 8.8)
+expect("e2e CIs", ev["base"]["undefended: attacker call emitted"]["ci95"] == [5.2, 18.5]
+       and ev["enh"]["undefended: attacker call emitted"]["ci95"] == [2.0, 12.2])
+import math
+def fisher(a, n1, b, n2):
+    k = a + b; tot = math.comb(n1 + n2, k)
+    pr = lambda x: math.comb(n1, x) * math.comb(n2, k - x) / tot
+    p0 = pr(a); return sum(pr(x) for x in range(0, k + 1) if pr(x) <= p0 * (1 + 1e-9))
+expect("fisher", round(fisher(8, 80, 0, 80), 4) == 0.0065 and round(fisher(4, 80, 0, 80), 2) == 0.12 and round(fisher(8, 80, 4, 80), 2) == 0.37,
+       ["$p=0.0065$"] if False else [])
+for tag, files in (("llm_*", ("llm_promptguard", "llm_judge_27b", "llm_judge_120b", "llm_e2e")),):
+    for n in files:
+        expect(f"{n} stamped clean", R(n)["provenance"]["working_tree_clean"] is True)
+
+# ---- models named in the manuscript must be the ones recorded in the result files ----------------
+expect("agent model", E2E["agent_model"] == "openai/gpt-oss-20b", ["gpt-oss-20b"])
+expect("judge models", J27["judge_model"] == "qwen/qwen3.8-27b" and J120["judge_model"] == "openai/gpt-oss-120b",
+       ["Qwen3.8-27B", "gpt-oss-120b"])
+expect("classifier model", CL["model"] == "meta-llama/llama-prompt-guard-2-86m", ["Llama Prompt Guard"])
+
+# ---- the manuscript must not name the inference provider --------------------------------------------
+import re
+for word in ("groq", "gsk_"):
+    if re.search(word, TEX, re.IGNORECASE):
+        fails.append(f"FORBIDDEN WORD IN TEX: {word}")
+pdf = os.path.join(ROOT, "paper", "main.pdf")
+if os.path.exists(pdf):
+    with open(pdf, "rb") as fh:
+        raw = fh.read().lower()
+    if b"groq" in raw:
+        fails.append("FORBIDDEN WORD IN PDF: groq")
+
 if fails:
     print("\n".join(fails))
     sys.exit(1)

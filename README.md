@@ -118,6 +118,15 @@ initially detects (median 68 queries; v1: 2); but under an **assumed-compromise*
 policy with taint gating completes the attacker's goal in **0 / 1054** cases (vs 1054 / 1054 without it, a result that is
 partly structural to the benchmark; see the paper). Test data: [`data/`](data/).
 
+**Model-in-the-loop results** (an 86M-parameter injection classifier, a 27B-parameter LLM judge, a 20B-parameter
+tool-using agent; sampled, small, single model per role, see the paper's caveats): the escalate-only judge lifts
+blind-corpus detection from 6/21 to 21/21 and InjecAgent plain-request detection from 2/100 to 90/100, at 4/24
+blind-corpus false positives (a 120B judge gave 7/24, so the false-positive rate depends strongly on the judge). With
+the agent in the loop, the attacker's call was emitted in 8/80 base and 4/80 enhanced cases and 0/80 were executed under
+least-privilege policy. These are re-derived from a released response cache (`data/results/llm_cache.jsonl`) with
+**no network access and no API key**: `python -m experiments.run_all --offline` (replay is the default; set `LLM_API_KEY`
+and `LLM_REPLAY=0` to re-run live, where outputs may drift).
+
 Scoring cost is linear in message length (~9-11 ms/KB measured), so messages over 32,768 characters are **not scanned and
 are blocked** by default (`RiskScorer(max_scan_chars=..., oversize_action="block"|"window"|"scan_all")`).
 
@@ -134,7 +143,7 @@ pip install -r requirements.txt         # Python 3.9-3.13 recommended for the La
 python -m examples.offline_demo         # architecture walkthrough, no LLM
 python -m experiments.evaluate --misses # before/after detection numbers
 python -m experiments.attack_sim        # original ASR simulation
-python -m pytest tests                  # 74 tests
+python -m pytest tests                  # 75 tests
 python dashboard/app.py                 # Flask dashboard
 python demo.py                          # LangGraph + Ollama demo (needs Ollama running)
 ```

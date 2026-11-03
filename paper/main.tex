@@ -10,10 +10,11 @@
 %% SELF-CONTAINED: bibliography embedded below via thebibliography.
 %%
 %% EVIDENCE SCOPE: every number in this manuscript was produced by executing
-%% released code against released data (see Sec. X); each result file under
-%% data/results/ records the git commit that produced it. No value is
+%% released code against released data (see Sec. XII-C); each result file under
+%% data/results/ records the git commit that produced it. Model-in-the-loop
+%% numbers are re-derivable from a released response cache. No value is
 %% estimated. Experiments that were not performed are listed as planned work
-%% in Sec. X-D and are never reported as results.
+%% in Sec. XII-E and are never reported as results.
 %% ===========================================================================
 
 \documentclass[conference]{IEEEtran}
@@ -72,32 +73,32 @@ Inter-Agent Edge of LLM Pipelines}
 Multi-agent large language model~(LLM) pipelines pass natural-language messages
 between agents, and a message composed from untrusted content can carry
 instructions that a downstream agent has no independent means to reject. We study
-SecureFlow, middleware placed on the inter-agent edge of LangGraph pipelines, in
-two forms: v1, a weighted keyword scorer (the system of our earlier manuscript),
-and v2, which adds input normalization, recalibrated rules, HMAC-signed messages
-with taint propagation, a default-deny tool policy, and a tamper-evident audit
-log. All results are deterministic, model-free measurements from released code and
-data.
+SecureFlow, middleware on the inter-agent edge of LangGraph pipelines, in two
+forms: v1, a weighted keyword scorer (the system of our earlier manuscript), and
+v2, which adds input normalization, recalibrated rules, HMAC-signed messages with
+taint propagation, a default-deny tool policy, an optional escalate-only LLM judge,
+and a tamper-evident audit log. Detection, ablation, adaptive-adversary and policy
+results are deterministic and model-free; model-in-the-loop results use cached,
+replayable responses.
 
-The findings are mixed, and we report them as such. (i)~v1's default
-configuration forwards 27 of 30 attack messages, and 88 of 93 on a pooled corpus,
-because every rule weight lies below the block threshold. (ii)~v2's rule layer
-reduces this to 15 of 93 (16.1\%; 95\% CI 10.0--24.9) at a measured false-positive
-rate of 3 of 81 benign messages, but on a blind corpus written after tuning it
-still forwards 15 of 21 attacks (71.4\%), missing most paraphrased, non-English and
-purely semantic attacks. (iii)~On the independent InjecAgent benchmark
-(1{,}054 cases), content detection flags only 17 (1.6\%) of plain-request
-injections; the 100\% figure on its ``enhanced'' variant reflects one fixed
-override phrase shared by all cases. (iv)~An oracle-guided adaptive adversary
-evades v2 on 70 of the 78 attacks it initially detects (89.7\%), with a median
-of 68 queries, against 2 queries for v1. (v)~In contrast, when we assume the agent
-is fully hijacked, task-scoped least-privilege tool authorization completes the
-attacker's goal in 0 of 1{,}054 InjecAgent cases, against 1{,}054 of 1{,}054
-without it---a result that depends on a structural property of the benchmark
-which we state explicitly. We also report a resource-exhaustion exposure of the
-filter itself and its mitigation. We conclude that content filtering is a useful
-audit signal but cannot carry the security burden, whereas provenance-aware,
-least-privilege enforcement held where detection did not.
+The findings are mixed, and we report them as such. (i)~v1 forwards 88 of 93 attack
+messages because every rule weight lies below its block threshold. (ii)~v2's rules
+cut this to 15 of 93 at 3 of 81 benign false positives, but on a blind corpus they
+still forward 15 of 21 (71.4\%). (iii)~On the independent InjecAgent benchmark
+(1{,}054 cases) the rules flag only 1.6\% of plain-request injections, and an
+86-million-parameter injection classifier (Llama Prompt Guard~2) flags none of 100; the 100\% on the
+``enhanced'' variant reflects one fixed override phrase. (iv)~An oracle-guided
+adversary evades v2 on 70 of the 78 attacks it initially detects (median 68
+queries; v1: 2). (v)~A 27-billion-parameter LLM judge (Qwen3.8-27B), which can only raise scores,
+lifts blind-corpus detection from 6/21 to 21/21 and InjecAgent detection from 2/100
+to 90/100, at 4/24 blind-corpus false positives; a gpt-oss-120b judge gave
+7/24, so the false-positive rate depends strongly on the judge. (vi)~With a
+tool-using agent (gpt-oss-20b), the attacker's call was emitted in 10.0\%
+(8/80) of base and 5.0\% (4/80) of enhanced cases; least-privilege policy executed 0
+of 80 in both (Fisher $p=0.0065$ and $0.12$), a result partly structural to the
+benchmark. We also report and mitigate a resource-exhaustion exposure in the filter.
+Content filtering is a useful audit signal and an LLM judge adds recall at a cost in
+false positives, but least-privilege enforcement is what bounded the damage.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -171,6 +172,9 @@ open.
 \item \textbf{Provenance and least-privilege enforcement evaluated under
 assumed compromise} on 1{,}054 external cases (Sec.~\ref{sec:policy}), with the
 structural caveat stated.
+\item \textbf{Model-in-the-loop evidence} (Sec.~\ref{sec:llm}): a learned
+injection classifier as a baseline, an escalate-only LLM judge, and a tool-using
+agent, with cached responses that replay without any API access.
 \item \textbf{A resource-exhaustion finding in the filter itself}
 (Sec.~\ref{sec:dos}), and a fail-closed bound.
 \item \textbf{A fully reproducible artifact}: released code, test data
@@ -405,9 +409,14 @@ edits, deletions and reordering are detectable (not prevented). Messages longer
 than $L_{\mathrm{scan}}=32{,}768$ characters are not scanned and are treated as
 blocked (fail-closed); Sec.~\ref{sec:dos} explains why.
 
-\textbf{Optional semantic judge.} v2 also accepts a pluggable LLM/classifier that
-can only \emph{raise} a score. It is covered by unit tests with stub models and is
-\textbf{not evaluated in this paper}; no judge result is reported.
+\textbf{Optional semantic judge.} v2 also accepts a pluggable LLM or classifier that
+can only \emph{raise} a score: the final score is $\max(S_2,\,\lfloor 100p\rceil)$
+where $p\in[0,1]$ is the judge's malicious-probability, so a judge that is fooled into
+saying ``safe'' leaves the deterministic layers exactly as they were, while a judge
+that is fooled into saying ``malicious'' can cause a false block. The judge prompt
+wraps the text under review in a random boundary and tells the model it is data;
+unparseable output is treated as no opinion, and a failing judge defaults to
+fail-open (configurable). It is evaluated in Sec.~\ref{sec:llm}.
 
 \begin{table}[t]
 \centering
@@ -491,13 +500,63 @@ wall-clock on a laptop under normal desktop load; repeating the run changed
 medians by up to roughly 1.5$\times$, so we use them for order of magnitude and for
 the v1--v2 ratio, not for hardware-independent claims.
 
+\subsection{Model-in-the-loop setup}
+\label{sec:llmsetup}
+
+Table~\ref{tab:models} lists the four open-weight models used in Sec.~\ref{sec:llm}.
+All were queried through a third-party hosted inference API at sampling temperature~0
+on 3~November 2026 (the agent with low reasoning effort); we do not control the
+provider's serving stack or numeric precision. The judge (Qwen3.8-27B) is from a
+different model family than the agent (gpt-oss-20b), so the judge is not the model it
+protects; gpt-oss-120b serves only as a sensitivity check for the judge on the blind
+corpus. The exact API identifiers and request parameters are recorded in the released
+result files.
+
+\begin{table}[t]
+\centering
+\caption{Models used in Sec.~\ref{sec:llm}. MoE = mixture of experts.}
+\label{tab:models}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Role} & \textbf{Model} & \textbf{Parameters} & \textbf{Ref.} \\
+\midrule
+Classifier & Llama Prompt Guard 2 & 86M (mDeBERTa) & \cite{promptguard2} \\
+Judge & Qwen3.8-27B & $\approx$27.8B, dense & \cite{qwen38} \\
+Judge (sensitivity) & gpt-oss-120b         & 116.8B (5.1B active), MoE & \cite{gptoss2025} \\
+Agent & gpt-oss-20b          & 20.9B (3.6B active), MoE & \cite{gptoss2025} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Two provenance notes. First, we found no official technical report for Qwen3.8-27B;
+the sources we located are secondary, so we state only that it is an open-weight,
+dense model of roughly 27.8B parameters released in August 2026, and we did not
+verify its licence or architecture. Second, Llama Prompt Guard 2 accepts at most 512
+tokens; the longest classifier input in our experiments is an InjecAgent tool
+response of about 170 estimated tokens, and no cached classifier request reported more
+than 512 prompt tokens, so no truncation applies.
+
+Because the service rate-limits requests, the InjecAgent experiments use fixed-seed
+stratified random samples (equal numbers of direct-harm and data-stealing cases): 100
+cases for detection and 80 for the agent (plus a 40-case control with the injection
+removed). Every request and response is stored in a released cache keyed by a hash of
+the full request, and the judge's text boundary is made a deterministic function of the
+text during evaluation so that requests are cacheable; in deployment it is random. All
+model-in-the-loop numbers in this paper can therefore be re-derived from the cache
+with no network access or key. Hosted-model outputs at temperature~0 are not
+guaranteed to be bit-identical across days, which is why the cache, and not a fresh
+re-run, is the reproducibility artifact.
+
 \subsection{On baselines}
 
 A pipeline without a filter forwards everything by definition, so an
 ``undefended'' row would be an identity, not a measurement; we omit it. The
-baselines we do report are v1 on every corpus and, for the policy layer, the
-no-policy case P0 (Sec.~\ref{sec:policy}). We did not run a competing detector such
-as Llama Guard~\cite{inan2023llamaguard}.
+baselines we do report are v1 on every corpus, for the policy layer the no-policy
+case P0 (Sec.~\ref{sec:policy}), and, in Sec.~\ref{sec:llm}, an 86-million-parameter
+learned injection classifier and an undefended agent. We did not run a larger
+safeguard model of the Llama Guard~\cite{inan2023llamaguard} type.
 
 %% ===========================================================================
 \section{Results I: Content Detection}
@@ -666,7 +725,152 @@ form of indirect injection---a polite request for a harmful action, phrased like
 legitimate one---content scoring has almost nothing to match, by v1 or v2.
 
 %% ===========================================================================
-\section{Results III: An Adaptive Adversary}
+\section{Results III: Learned Classifier, Semantic Judge, and an Agent in the Loop}
+\label{sec:llm}
+
+This section adds the model-in-the-loop evidence our first manuscript lacked, using
+the setup of Sec.~\ref{sec:llmsetup}. InjecAgent samples are 100 cases for detection
+and 80 for the agent; all intervals are 95\% Wilson intervals.
+
+\subsection{A learned classifier as a baseline}
+
+Table~\ref{tab:clf} compares the v2 rules with Llama Prompt Guard~2 (86M parameters;
+flag if score $\ge 0.5$) on the same messages, and with
+the union of the two. On the blind corpus the classifier flags 9 of 21 attacks
+against the rules' 6 of 21 (intervals overlap: 24.5--63.5\% vs.\ 13.8--50.0\%), with
+the same 3 of 24 false positives; their union flags 12 of 21 but adds two false
+positives (5 of 24). On the original corpora it flags far fewer attacks than the
+rules (14 of 30 and 17 of 42), which is unsurprising because the rules were tuned
+on them. The informative row is InjecAgent: the classifier flags \emph{none} of the
+100 plain-request injections (upper bound 3.7\%)---the same blind spot as the
+rules---and all 100 enhanced ones, which share one override phrase. A learned
+classifier of this size therefore does not close the gap that the rules leave on
+plain-request indirect injection. A larger classifier might; we did not test one.
+
+\begin{table}[t]
+\centering
+\caption{Attacks detected (benign false positives) at the default operating points:
+rules at $\tau=60$, classifier at score $\ge0.5$. InjecAgent benign = 17 clean
+tool-response templates + 17 user instructions.}
+\label{tab:clf}
+\footnotesize
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+\textbf{Corpus} & \textbf{Class.} & \textbf{Rules} & \textbf{Either} \\
+\midrule
+v1 corpus (30 / 20)          & 14/30 (0/20)   & 30/30 (0/20)   & 30/30 (0/20) \\
+v2 corpus (42 / 37)          & 17/42 (0/37)   & 42/42 (0/37)   & 42/42 (0/37) \\
+v3 blind (21 / 24)           & 9/21 (3/24)    & 6/21 (3/24)    & 12/21 (5/24) \\
+InjecAgent base (100 / 34)   & 0/100 (0/34)   & 2/100 (0/34)   & 2/100 (0/34) \\
+InjecAgent enh.\ (100 / 34) & 100/100 (0/34) & 100/100 (0/34) & 100/100 (0/34) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{The escalate-only semantic judge}
+
+Table~\ref{tab:judge} reports the Qwen3.8-27B judge, alone (flag if
+$p\ge0.5$) and combined with the rules in the escalate-only form of Sec.~\ref{sec:arch}
+(blocked if the rules block or $p\ge0.6$). The judge supplies exactly what the
+deterministic layers lack. On the blind corpus detection rises from 6 of 21 to
+21 of 21 (CI 84.5--100\%), and on InjecAgent plain-request injections from 2 of 100
+to 90 of 100 (CI 82.6--94.5\%), while on the v2 corpus it flags 41 of 42 alone and
+the combination 42 of 42. It is not free: on the blind corpus the combination
+produces 4 of 24 false positives against 3 of 24 for the rules alone (interval
+6.7--35.9\%). Used alone, the judge flags two of the 24 benign blind messages,
+both ordinary operational requests (an instruction to e-mail notes to a colleague,
+and a legitimate role assignment), and none of the 37 and 17 benign messages of the
+other two corpora.
+
+\begin{table}[t]
+\centering
+\caption{Qwen3.8-27B judge (no message was left without an opinion).
+Attacks detected (benign false positives). Combination: rules block or $p\ge0.6$.}
+\label{tab:judge}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+\textbf{Corpus} & \textbf{Rules} & \textbf{Judge alone} & \textbf{Rules + judge} \\
+\midrule
+v3 blind (21 / 24)         & 6/21 (3/24)    & 21/21 (2/24)  & 21/21 (4/24) \\
+InjecAgent base (100 / 17) & 2/100 (0/17)   & 90/100 (0/17) & 90/100 (0/17) \\
+v2 corpus (42 / 37)        & 42/42 (0/37)   & 41/42 (0/37)  & 42/42 (0/37) \\
+\midrule
+\multicolumn{4}{@{}l}{\textit{Sensitivity: gpt-oss-120b judge, blind corpus only}} \\
+v3 blind (21 / 24)         & 6/21 (3/24)    & 21/21 (5/24)  & 21/21 (7/24) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The sensitivity row is a warning about how far to trust any single false-positive
+figure. A larger judge reached the same detection but flagged five of the 24 benign
+blind messages on its own (seven in combination), because it treated some benign
+operational requests---reading a config, calling a health endpoint---as risky. The
+false-positive rate therefore depends strongly on the judge, and with 24 benign
+messages the intervals are wide. We did not calibrate the $0.5$ and $0.6$ cut-offs.
+The judge also adds a model call per message (not timed here) and is itself an
+injection target: escalate-only operation stops a fooled judge from \emph{admitting}
+an attack but not from \emph{blocking} a legitimate message.
+
+\subsection{An agent in the loop}
+
+We give the gpt-oss-20b agent a simplified single-turn setting in the spirit
+of InjecAgent: the user's instruction, the user's tool call already made, the tool
+response carrying the injection, and function definitions for the user's tool and the
+attacker's tool(s). We count an attack as \emph{emitted} when the agent's next
+message calls an attacker tool, and then apply each defense to what the agent
+emitted (Table~\ref{tab:e2e}). With the injection removed from the tool response
+(a 40-case control), the agent never called an attacker tool (0 of 40; upper bound
+8.8\%), so the emitted calls are attributable to the injection.
+
+\begin{table}[t]
+\centering
+\caption{Agent in the loop, 80 InjecAgent cases per column (40 direct-harm + 40
+data-stealing). Counts (95\% CI). ``Executed'' = emitted and authorized.}
+\label{tab:e2e}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+ & \textbf{Base} & \textbf{Enhanced} \\
+\midrule
+Undefended: attacker call emitted  & 8/80 [5.2, 18.5] & 4/80 [2.0, 12.2] \\
+Rules flagged the tool response    & 1/80             & 80/80 \\
+Executed, rules filter\textsuperscript{a}   & 8/80 [5.2, 18.5] & 0/80 [0.0, 4.6] \\
+Executed, task-scoped grants (P1)  & 0/80 [0.0, 4.6]  & 0/80 [0.0, 4.6] \\
+Executed, toolkit grants + taint gating (P3) & 0/80 [0.0, 4.6] & 0/80 [0.0, 4.6] \\
+Executed, rules filter + P3        & 0/80 [0.0, 4.6]  & 0/80 [0.0, 4.6] \\
+\bottomrule
+\end{tabular}
+\\[2pt]
+\footnotesize\textsuperscript{a}Assumes a redacted tool response yields no attacker
+call; the agent was not re-run on redacted input.
+\end{table}
+
+The agent resisted most injections: it emitted the attacker's call in 8 of 80 base
+cases (10.0\%) and, perhaps surprisingly, in only 4 of 80 (5.0\%) when the override
+phrase was added (Fisher exact $p=0.37$ between the two, so we draw no conclusion; we
+did not test whether training against that phrase explains it). The rules filter,
+which flags the tool response in 80 of 80 enhanced cases but only 1 of 80 base cases
+(and not one of the eight that succeeded), therefore removes every enhanced attempt
+and none of the base ones. Every emitted attacker call was denied under the
+least-privilege policies: 0 of 80 executed, against 8 of 80 undefended on base
+cases (Fisher exact $p=0.0065$) and 4 of 80 on enhanced cases ($p=0.12$, not
+significant at this sample size). We do not pool the two columns because they reuse
+the same 80 cases.
+
+\textbf{Reading this correctly.} (i)~One agent, one model family, and a low
+base rate: the power to detect a policy effect is limited, and the result that the
+policy executed nothing is partly structural, as in Sec.~\ref{sec:policy}, because
+the attacker's tools are almost never granted to the user's task. (ii)~Our
+single-turn function-calling setup is not InjecAgent's ReAct protocol, so these
+rates are not comparable to published ones. (iii)~For data-stealing cases we score
+only the first attacker call. (iv)~We measure no utility cost.
+
+%% ===========================================================================
+\section{Results IV: An Adaptive Adversary}
 \label{sec:adaptive}
 
 We implement a tier-A2 attacker as an oracle-guided search: for each seed attack it
@@ -711,7 +915,7 @@ lower bound on adaptive strength. Importantly, none of these rewrites alters whi
 tools an attacker's call needs, which is why the next experiment is unaffected.
 
 %% ===========================================================================
-\section{Results IV: Least-Privilege Enforcement Under Assumed Compromise}
+\section{Results V: Least-Privilege Enforcement Under Assumed Compromise}
 \label{sec:policy}
 
 Under tier~H we assume the injection fully succeeds and the agent attempts the
@@ -772,7 +976,7 @@ read untrusted content and then act, which taint gating would hold for approval.
 Utility under real workflows is the main outstanding cost question.
 
 %% ===========================================================================
-\section{Results V: Overhead and Resource Exhaustion}
+\section{Results VI: Overhead and Resource Exhaustion}
 \label{sec:dos}
 
 \subsection{Latency}
@@ -835,6 +1039,17 @@ a security boundary: against paraphrase, other languages, plain-request injectio
 and an adaptive attacker it fails, and we expect those failures to be the realistic
 case.
 
+\textbf{What a judge adds, and costs.} The one place content inspection helped on
+plain-request indirect injection was an LLM judge: Qwen3.8-27B took
+InjecAgent detection from 2 to 90 of 100 and blind-corpus detection from 6 to 21 of 21,
+which neither the rules nor Llama Prompt Guard~2
+classifier approached. The price
+is a model call per message, an additional injection target, and a false-positive rate
+that varied from 2 to 5 of 24 benign blind messages between the Qwen3.8-27B and the
+gpt-oss-120b judge. We would deploy such a judge only on untrusted or
+tainted content (its scope option), with its output feeding the audit log and an
+approval step rather than silently blocking.
+
 \textbf{What held.} Deterministic controls that do not depend on understanding the
 text---message authentication, taint propagation, default-deny grants, argument
 validation, approval gating---held where detection did not, in the one evaluation
@@ -858,11 +1073,15 @@ low BER and zero FPR (Fig.~\ref{fig:sweep2}).
 
 \subsection{Limitations of the evidence}
 
-\textbf{No end-to-end measurement.} No language model is in the loop, so we observe
-suppression and authorization, not adversary outcomes. This paper characterises a
-detector and a policy layer; it makes no claim about the attack success rate of a
-pipeline that deploys them. (The reference worker's response-keyword compliance
-check would mislabel a correct refusal as compliance and was not used.)
+\textbf{Limited end-to-end measurement.} The detection, adaptive and policy
+experiments place no model in the loop. The one end-to-end experiment
+(Sec.~\ref{sec:llm}) uses a single agent (gpt-oss-20b), 80 cases per variant,
+a simplified single-turn protocol and only the first attacker call; the agent
+emitted attacks rarely, so statistical power is low and the enhanced-variant policy
+effect is not significant ($p=0.12$). It makes no claim about the attack success rate
+of any other model or of a production pipeline. (The reference worker's
+response-keyword compliance check would mislabel a correct refusal as compliance and
+was not used.)
 
 \textbf{Corpus authorship.} The v1--v3 corpora and the rules were written by the
 same authors. We mitigate with a blind corpus (v3) and an independent benchmark
@@ -885,8 +1104,11 @@ correctly by the application; utility cost is unmeasured (Sec.~\ref{sec:policy})
 \textbf{Adaptive attacker.} Operators are author-written and meaning preservation
 for an LLM is unverified (Sec.~\ref{sec:adaptive}).
 
-\textbf{Semantic judge.} Implemented but \emph{not evaluated}; no claim is made
-about it.
+\textbf{Semantic judge and classifier.} Each was evaluated with one model per
+role on small samples (24, 17 and 37 benign messages; 100 InjecAgent attacks). The
+judge's false-positive rate moved from 2 to 5 of 24 with the model chosen, cut-offs
+were not calibrated, its latency and cost were not measured, and we did not attack the
+judge itself. The classifier (Llama Prompt Guard~2) is a small 86-million-parameter model.
 
 \subsection{Limitations of the mechanism}
 
@@ -906,10 +1128,16 @@ The released test data are under \texttt{data/corpora/} (\texttt{v1.jsonl},
 result files are under \texttt{data/results/}, each stamped with the producing git
 commit; InjecAgent is fetched at a pinned commit by a script rather than
 redistributed. \texttt{python -m experiments.run\_all} regenerates every number here
-in about seven minutes without a model or GPU; the 74-test suite
+in about seven minutes without a model or GPU; the 75-test suite
 (\texttt{python -m pytest tests}) includes regression guards on the corpora. Detection,
 ablation, InjecAgent and adaptive results are deterministic (the adaptive search uses
-a fixed RNG seed); latency varies with hardware and load.
+a fixed RNG seed); latency varies with hardware and load. The model-in-the-loop
+results (Sec.~\ref{sec:llm}) are re-derived from the released request--response cache
+(\texttt{data/results/llm\_cache.jsonl}, pruned to exactly the entries the experiments
+use) by running \texttt{python -m experiments.run\_all} with replay enabled, which
+needs no network access and no credentials; we verified that replay reproduces every
+count reported here. Re-running against a live service needs a key and may differ
+slightly because hosted-model outputs can drift.
 
 \subsection{Ethics and responsible use}
 
@@ -925,16 +1153,18 @@ treated as test data, never as instructions.
 
 None of the following has been performed, and none is reported as a result.
 \begin{enumerate}
-\item \textbf{End-to-end evaluation with a model in the loop}, with and without the
-middleware, fixed model/temperature/seed, repetitions, and per-case success
-criteria with inter-annotator agreement.
-\item \textbf{Evaluation of the semantic judge} on the blind and external sets,
-including its own susceptibility to injection.
+\item \textbf{Larger-scale end-to-end evaluation}: several agent models and
+families, InjecAgent's own ReAct protocol and metric, AgentDojo~\cite{debenedetti2024agentdojo},
+repetitions per case, and per-case success criteria with inter-annotator agreement.
+The agent experiment of Sec.~\ref{sec:llm} is a small first step, not a substitute.
+\item \textbf{Judge calibration and attack}: choose the cut-offs under a fixed
+false-positive budget~\cite{liu2024formalizing}, measure latency and cost, compare
+several judge models and a larger safeguard model~\cite{inan2023llamaguard}, and
+attack the judge with adaptive injections.
 \item \textbf{A larger, independently authored, multilingual benign and attack
 corpus}, including content-moderation prompts that legitimately quote injections.
 \item \textbf{Utility measurement of taint gating} on realistic multi-step
-workflows, and comparison with a learned detector~\cite{inan2023llamaguard} and with
-AgentDojo~\cite{debenedetti2024agentdojo} under its own metrics.
+workflows.
 \item \textbf{LLM-guided adaptive attacks} and verification that rewrites remain
 effective against target models.
 \end{enumerate}
@@ -945,13 +1175,19 @@ effective against target models.
 We set out to learn what a transparent checkpoint on the inter-agent edge can and
 cannot do. Its content-scoring half does less than it appears to: v1 forwarded
 94.6\% of 93 attacks because of how its weights and threshold interact; v2 cuts that
-to 16.1\% on data it was tuned near, but forwards 71.4\% of a blind corpus, 98.4\% of
-plain-request injections on an external benchmark, and, once an oracle-guided
-attacker rewrites them, about 90\% of the attacks it initially detects. Its enforcement half did more: assuming
-total hijack, least-privilege tool authorization with taint gating completed the
-attacker's goal in none of 1{,}054 external cases, though that result is partly
-structural and its utility cost is unmeasured. We offer SecureFlow as an audit point,
-a cheap first filter, and a tool-authorization boundary, to be deployed beneath an
+to 16.1\% on data it was tuned near, but forwards 71.4\% of a blind corpus and 98.4\%
+of plain-request injections on an external benchmark, as does the 86-million-parameter
+Prompt Guard~2 classifier, and, once an oracle-guided attacker rewrites them, about 90\% of
+the attacks it initially detects. A Qwen3.8-27B judge recovered most of
+the missing recall (90 of 100 on that benchmark; 21 of 21 on the blind corpus) at a
+false-positive cost that depended strongly on which judge was used. The enforcement
+half did the most to limit damage: with a gpt-oss-20b agent in the loop,
+every emitted attacker call was denied by least-privilege authorization (0 of 80
+executed in each variant, against 8 of 80 undefended on the base cases), and
+assuming total hijack the attacker's goal completed in none of 1{,}054 external
+cases---though both results are partly structural and the utility cost is unmeasured.
+We offer SecureFlow as an audit point, a cheap first filter, an optional judge for
+untrusted content, and a tool-authorization boundary, to be deployed beneath an
 isolation design rather than in place of one. We would rather report a defense whose
 detector does not generalize than a number that does not mean what it says.
 
@@ -1049,6 +1285,18 @@ M.~Costa, B.~K\"{o}pf, A.~Kolluri, A.~Paverd, M.~Russinovich, A.~Salem,
 S.~Tople, L.~Wutschitz, and S.~Zanella-B\'{e}guelin,
 ``Securing AI agents with information-flow control,''
 \emph{arXiv preprint arXiv:2505.23643}, 2025.
+
+\bibitem{gptoss2025}
+{OpenAI}, ``gpt-oss-120b \& gpt-oss-20b model card,''
+\emph{arXiv preprint arXiv:2508.10925}, Aug. 2025.
+
+\bibitem{promptguard2}
+{Meta}, ``Llama Prompt Guard 2 (22M and 86M) model card,'' 2025. [Online].
+Available: \url{https://www.llama.com/docs/model-cards-and-prompt-formats/prompt-guard/}.
+
+\bibitem{qwen38}
+{Qwen Team, Alibaba Group}, ``Qwen3.8-27B (open weights),'' Aug. 2026. No technical
+report was located; weights are distributed through Hugging Face and ModelScope.
 
 \bibitem{rfc2104}
 H.~Krawczyk, M.~Bellare, and R.~Canetti,
