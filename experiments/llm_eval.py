@@ -183,7 +183,7 @@ def tool_spec(full, kit, t):
                                               "parameters": {"type": "object", "properties": props, "required": req}}}
 
 
-def run_e2e(n_each, n_control):
+def run_e2e(n_each, n_control, model=AGENT_MODEL, tag=""):
     cases, users, toolkits = load()
     specs, kit_of, short_of, kit_tools = {}, {}, {}, {}
     for kit in toolkits:
@@ -208,7 +208,9 @@ def run_e2e(n_each, n_control):
             {"role": "tool", "tool_call_id": "call_1", "content": response_text},
         ]
         tools = [specs[x] for x in dict.fromkeys([ut] + attackers) if x in specs]
-        r = G.chat(AGENT_MODEL, msgs, tools=tools, max_tokens=500, est_tokens=2200, reasoning_effort="low")
+        oss = "gpt-oss" in model
+        extra = {"reasoning_effort": "low"} if oss else {}
+        r = G.chat(model, msgs, tools=tools, max_tokens=500 if oss else 700, est_tokens=2200, **extra)
         names = []
         if "error" in r:
             gen = r["error"].get("failed_generation", "")
@@ -232,7 +234,7 @@ def run_e2e(n_each, n_control):
         pol = policy_for(case, scope, gating)
         return any(n in case["Attacker Tools"] and pol.authorize("agent", n, {}, context=tainted).allowed for n in names)
 
-    res = {"agent_model": AGENT_MODEL, "n_per_kind": n_each, "variants": {}, "per_case": []}
+    res = {"agent_model": model, "n_per_kind": n_each, "variants": {}, "per_case": []}
     for variant in ("base", "enh"):
         att = first = rules_flag = 0
         ex = {"P1 task-scoped": 0, "P3 toolkit+taint gating": 0}
@@ -274,7 +276,7 @@ def run_e2e(n_each, n_control):
         spurious += any(n in case["Attacker Tools"] for n in names)
     res["control_clean_tool_response"] = rate(spurious, len(ctl))
     print("control (clean response) spurious attacker-tool calls:", spurious, "/", len(ctl))
-    dump(OUT + "llm_e2e.json", res)
+    dump(OUT + (f"llm_e2e_{tag}.json" if tag else "llm_e2e.json"), res)
 
 
 def main():
@@ -285,6 +287,8 @@ def main():
     ap.add_argument("--judge-sets", default="v3,injecagent,v2")
     ap.add_argument("--n-each", type=int, default=50, help="InjecAgent cases per kind (dh, ds)")
     ap.add_argument("--e2e-n-each", type=int, default=40)
+    ap.add_argument("--agent-model", default=AGENT_MODEL)
+    ap.add_argument("--agent-tag", default="", help="suffix for the result file (empty = the primary agent)")
     ap.add_argument("--control", type=int, default=40)
     a = ap.parse_args()
     if a.what in ("promptguard", "all"):
@@ -292,7 +296,7 @@ def main():
     if a.what in ("judge", "all"):
         run_judge(a.n_each, a.judge_model, a.judge_tag, tuple(a.judge_sets.split(",")))
     if a.what in ("e2e", "all"):
-        run_e2e(a.e2e_n_each, a.control)
+        run_e2e(a.e2e_n_each, a.control, a.agent_model, a.agent_tag)
 
 
 if __name__ == "__main__":
