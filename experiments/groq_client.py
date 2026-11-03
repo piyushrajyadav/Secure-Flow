@@ -11,9 +11,11 @@ Models are sampled at temperature 0, but hosted-model outputs are not guaranteed
 days; the cache is the reproducibility artifact.
 """
 import hashlib
+import collections
 import json
 import os
 import re
+import sys
 import threading
 import time
 import urllib.error
@@ -22,6 +24,11 @@ import urllib.request
 URL = "https://api.groq.com/openai/v1/chat/completions"
 CACHE = os.path.join("data", "results", "groq_cache.jsonl")
 _lock = threading.Lock()
+
+
+def _log(msg):
+    if os.environ.get("LLM_VERBOSE") == "1":
+        print("[llm]", msg, file=sys.stderr, flush=True)
 _cache = None
 
 
@@ -49,6 +56,28 @@ def _secs(s: str) -> float:
     return total
 
 
+TPM_BUDGET = int(os.environ.get("LLM_TPM_BUDGET", "7000"))      # stay under the provider's 8000 tokens/min
+_windows = collections.defaultdict(collections.deque)           # model -> deque[(timestamp, reserved_tokens)]
+
+
+def _throttle(model: str, reserve: int) -> None:
+    """Client-side token bucket: the provider counts prompt + max completion tokens against the
+    per-minute budget, so wait until this request fits in the trailing 60 s instead of eating a 429."""
+    with _lock:
+        win = _windows[model]
+        while True:
+            now = time.time()
+            while win and now - win[0][0] >= 60:
+                win.popleft()
+            used = sum(t for _, t in win)
+            if used + reserve <= TPM_BUDGET or not win:
+                win.append((now, reserve))
+                return
+            wait = 60 - (now - win[0][0]) + 0.2
+            _log(f"throttle {model}: used={used} reserve={reserve}, sleeping {wait:.1f}s")
+            time.sleep(wait)
+
+
 class ReplayMiss(RuntimeError):
     pass
 
@@ -67,9 +96,11 @@ def chat(model: str, messages: list, tools: list = None, max_tokens: int = 400, 
     api_key = os.environ.get("GROQ_API_KEY")
     if not api_key:
         raise RuntimeError("GROQ_API_KEY is not set (or set GROQ_REPLAY=1 to use the cache only)")
+    reserve = int(len(json.dumps(body)) / 3.2) + max_tokens
     attempt = 0
     while True:
         attempt += 1
+        _throttle(model, reserve)
         req = urllib.request.Request(URL, data=json.dumps(body).encode(), headers={
             "Authorization": "Bearer " + api_key, "Content-Type": "application/json", "User-Agent": "secureflow-eval/1.0"})
         try:
@@ -78,6 +109,7 @@ def chat(model: str, messages: list, tools: list = None, max_tokens: int = 400, 
                 hdr = {h.lower(): v for h, v in r.headers.items()}
             resp = {"message": data["choices"][0]["message"], "usage": data.get("usage", {})}
             rem = hdr.get("x-ratelimit-remaining-tokens")
+            _log(f"ok {model} remaining-tokens={rem} usage={resp['usage'].get('total_tokens')}")
             if rem is not None and int(rem) < est_tokens:
                 time.sleep(min(70, _secs(hdr.get("x-ratelimit-reset-tokens", "5s")) + 0.5))
             break
@@ -85,6 +117,7 @@ def chat(model: str, messages: list, tools: list = None, max_tokens: int = 400, 
             text = e.read().decode("utf-8", "replace")
             if e.code == 429 and attempt < 8:
                 wait = float(e.headers.get("retry-after", "10"))
+                _log(f"429 attempt {attempt}: retry-after={wait}s :: {text[:160]}")
                 time.sleep(min(90, wait + 1))
                 continue
             if e.code == 400:
