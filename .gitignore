@@ -55,3 +55,6 @@ Thumbs.db
 .env.local
 
 .venv/
+
+# external benchmark data (fetched, not redistributed)
+data/external/injecagent/

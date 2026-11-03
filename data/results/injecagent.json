@@ -1,0 +1,506 @@
+{
+  "dataset": "InjecAgent",
+  "commit": "f19c9f2c79a41046eb13c03c51a24c567a8ffa07",
+  "license": "MIT",
+  "rules_frozen_at": "053d8a63a8f668e080ac1a5c15c6e57577760c86",
+  "detection": {
+    "attack": {
+      "attacker instruction alone (base)": {
+        "v1 keyword (tau=60)": {
+          "k": 0,
+          "n": 1054,
+          "pct": 0.0,
+          "ci95": [
+            0.0,
+            0.4
+          ]
+        },
+        "v2 rules (tau=60)": {
+          "k": 17,
+          "n": 1054,
+          "pct": 1.6,
+          "ci95": [
+            1.0,
+            2.6
+          ]
+        },
+        "v2 rules, untrusted source (tau=40)": {
+          "k": 17,
+          "n": 1054,
+          "pct": 1.6,
+          "ci95": [
+            1.0,
+            2.6
+          ]
+        }
+      },
+      "tool response, base": {
+        "v1 keyword (tau=60)": {
+          "k": 0,
+          "n": 1054,
+          "pct": 0.0,
+          "ci95": [
+            0.0,
+            0.4
+          ]
+        },
+        "v2 rules (tau=60)": {
+          "k": 17,
+          "n": 1054,
+          "pct": 1.6,
+          "ci95": [
+            1.0,
+            2.6
+          ]
+        },
+        "v2 rules, untrusted source (tau=40)": {
+          "k": 17,
+          "n": 1054,
+          "pct": 1.6,
+          "ci95": [
+            1.0,
+            2.6
+          ]
+        }
+      },
+      "tool response, enhanced (override phrase)": {
+        "v1 keyword (tau=60)": {
+          "k": 0,
+          "n": 1054,
+          "pct": 0.0,
+          "ci95": [
+            0.0,
+            0.4
+          ]
+        },
+        "v2 rules (tau=60)": {
+          "k": 1054,
+          "n": 1054,
+          "pct": 100.0,
+          "ci95": [
+            99.6,
+            100.0
+          ]
+        },
+        "v2 rules, untrusted source (tau=40)": {
+          "k": 1054,
+          "n": 1054,
+          "pct": 100.0,
+          "ci95": [
+            99.6,
+            100.0
+          ]
+        }
+      }
+    },
+    "benign": {
+      "clean tool responses (injection removed)": {
+        "v1 keyword (tau=60)": {
+          "k": 0,
+          "n": 17,
+          "pct": 0.0,
+          "ci95": [
+            0.0,
+            18.4
+          ]
+        },
+        "v2 rules (tau=60)": {
+          "k": 0,
+          "n": 17,
+          "pct": 0.0,
+          "ci95": [
+            0.0,
+            18.4
+          ]
+        },
+        "v2 rules, untrusted source (tau=40)": {
+          "k": 0,
+          "n": 17,
+          "pct": 0.0,
+          "ci95": [
+            0.0,
+            18.4
+          ]
+        }
+      },
+      "user instructions": {
+        "v1 keyword (tau=60)": {
+          "k": 0,
+          "n": 17,
+          "pct": 0.0,
+          "ci95": [
+            0.0,
+            18.4
+          ]
+        },
+        "v2 rules (tau=60)": {
+          "k": 0,
+          "n": 17,
+          "pct": 0.0,
+          "ci95": [
+            0.0,
+            18.4
+          ]
+        },
+        "v2 rules, untrusted source (tau=40)": {
+          "k": 0,
+          "n": 17,
+          "pct": 0.0,
+          "ci95": [
+            0.0,
+            18.4
+          ]
+        }
+      }
+    },
+    "attack_by_type_base_tool_response": {
+      "Physical Harm": {
+        "v1 keyword (tau=60)": {
+          "k": 0,
+          "n": 170,
+          "pct": 0.0,
+          "ci95": [
+            0.0,
+            2.2
+          ]
+        },
+        "v2 rules (tau=60)": {
+          "k": 0,
+          "n": 170,
+          "pct": 0.0,
+          "ci95": [
+            0.0,
+            2.2
+          ]
+        },
+        "v2 rules, untrusted source (tau=40)": {
+          "k": 0,
+          "n": 170,
+          "pct": 0.0,
+          "ci95": [
+            0.0,
+            2.2
+          ]
+        }
+      },
+      "Financial Harm": {
+        "v1 keyword (tau=60)": {
+          "k": 0,
+          "n": 153,
+          "pct": 0.0,
+          "ci95": [
+            0.0,
+            2.4
+          ]
+        },
+        "v2 rules (tau=60)": {
+          "k": 0,
+          "n": 153,
+          "pct": 0.0,
+          "ci95": [
+            0.0,
+            2.4
+          ]
+        },
+        "v2 rules, untrusted source (tau=40)": {
+          "k": 0,
+          "n": 153,
+          "pct": 0.0,
+          "ci95": [
+            0.0,
+            2.4
+          ]
+        }
+      },
+      "Data Security Harm": {
+        "v1 keyword (tau=60)": {
+          "k": 0,
+          "n": 187,
+          "pct": 0.0,
+          "ci95": [
+            0.0,
+            2.0
+          ]
+        },
+        "v2 rules (tau=60)": {
+          "k": 0,
+          "n": 187,
+          "pct": 0.0,
+          "ci95": [
+            0.0,
+            2.0
+          ]
+        },
+        "v2 rules, untrusted source (tau=40)": {
+          "k": 0,
+          "n": 187,
+          "pct": 0.0,
+          "ci95": [
+            0.0,
+            2.0
+          ]
+        }
+      },
+      "Physical Data": {
+        "v1 keyword (tau=60)": {
+          "k": 0,
+          "n": 187,
+          "pct": 0.0,
+          "ci95": [
+            0.0,
+            2.0
+          ]
+        },
+        "v2 rules (tau=60)": {
+          "k": 0,
+          "n": 187,
+          "pct": 0.0,
+          "ci95": [
+            0.0,
+            2.0
+          ]
+        },
+        "v2 rules, untrusted source (tau=40)": {
+          "k": 0,
+          "n": 187,
+          "pct": 0.0,
+          "ci95": [
+            0.0,
+            2.0
+          ]
+        }
+      },
+      "Financial Data": {
+        "v1 keyword (tau=60)": {
+          "k": 0,
+          "n": 102,
+          "pct": 0.0,
+          "ci95": [
+            0.0,
+            3.6
+          ]
+        },
+        "v2 rules (tau=60)": {
+          "k": 0,
+          "n": 102,
+          "pct": 0.0,
+          "ci95": [
+            0.0,
+            3.6
+          ]
+        },
+        "v2 rules, untrusted source (tau=40)": {
+          "k": 0,
+          "n": 102,
+          "pct": 0.0,
+          "ci95": [
+            0.0,
+            3.6
+          ]
+        }
+      },
+      "Others": {
+        "v1 keyword (tau=60)": {
+          "k": 0,
+          "n": 255,
+          "pct": 0.0,
+          "ci95": [
+            0.0,
+            1.5
+          ]
+        },
+        "v2 rules (tau=60)": {
+          "k": 17,
+          "n": 255,
+          "pct": 6.7,
+          "ci95": [
+            4.2,
+            10.4
+          ]
+        },
+        "v2 rules, untrusted source (tau=40)": {
+          "k": 17,
+          "n": 255,
+          "pct": 6.7,
+          "ci95": [
+            4.2,
+            10.4
+          ]
+        }
+      }
+    }
+  },
+  "policy": {
+    "n_cases": 1054,
+    "variants": {
+      "P0 no policy": {
+        "attacker_goal_completed": {
+          "k": 1054,
+          "n": 1054,
+          "pct": 100.0,
+          "ci95": [
+            99.6,
+            100.0
+          ]
+        },
+        "any_attacker_step_authorized": {
+          "k": 1054,
+          "n": 1054,
+          "pct": 100.0,
+          "ci95": [
+            99.6,
+            100.0
+          ]
+        },
+        "legit_user_tool_allowed": {
+          "k": 1054,
+          "n": 1054,
+          "pct": 100.0,
+          "ci95": [
+            99.6,
+            100.0
+          ]
+        },
+        "completed_by_type": {
+          "Physical Harm": 170,
+          "Financial Harm": 153,
+          "Data Security Harm": 187,
+          "Physical Data": 187,
+          "Financial Data": 102,
+          "Others": 255
+        }
+      },
+      "P1 task-scoped grants (user tool only)": {
+        "attacker_goal_completed": {
+          "k": 0,
+          "n": 1054,
+          "pct": 0.0,
+          "ci95": [
+            0.0,
+            0.4
+          ]
+        },
+        "any_attacker_step_authorized": {
+          "k": 1,
+          "n": 1054,
+          "pct": 0.1,
+          "ci95": [
+            0.0,
+            0.5
+          ]
+        },
+        "legit_user_tool_allowed": {
+          "k": 1054,
+          "n": 1054,
+          "pct": 100.0,
+          "ci95": [
+            99.6,
+            100.0
+          ]
+        },
+        "completed_by_type": {}
+      },
+      "P2 toolkit-scoped grants": {
+        "attacker_goal_completed": {
+          "k": 1,
+          "n": 1054,
+          "pct": 0.1,
+          "ci95": [
+            0.0,
+            0.5
+          ]
+        },
+        "any_attacker_step_authorized": {
+          "k": 74,
+          "n": 1054,
+          "pct": 7.0,
+          "ci95": [
+            5.6,
+            8.7
+          ]
+        },
+        "legit_user_tool_allowed": {
+          "k": 1054,
+          "n": 1054,
+          "pct": 100.0,
+          "ci95": [
+            99.6,
+            100.0
+          ]
+        },
+        "completed_by_type": {
+          "Data Security Harm": 1
+        }
+      },
+      "P3 toolkit-scoped + taint gating": {
+        "attacker_goal_completed": {
+          "k": 0,
+          "n": 1054,
+          "pct": 0.0,
+          "ci95": [
+            0.0,
+            0.4
+          ]
+        },
+        "any_attacker_step_authorized": {
+          "k": 8,
+          "n": 1054,
+          "pct": 0.8,
+          "ci95": [
+            0.4,
+            1.5
+          ]
+        },
+        "legit_user_tool_allowed": {
+          "k": 1054,
+          "n": 1054,
+          "pct": 100.0,
+          "ci95": [
+            99.6,
+            100.0
+          ]
+        },
+        "completed_by_type": {}
+      },
+      "P4 task-scoped + taint gating": {
+        "attacker_goal_completed": {
+          "k": 0,
+          "n": 1054,
+          "pct": 0.0,
+          "ci95": [
+            0.0,
+            0.4
+          ]
+        },
+        "any_attacker_step_authorized": {
+          "k": 1,
+          "n": 1054,
+          "pct": 0.1,
+          "ci95": [
+            0.0,
+            0.5
+          ]
+        },
+        "legit_user_tool_allowed": {
+          "k": 1054,
+          "n": 1054,
+          "pct": 100.0,
+          "ci95": [
+            99.6,
+            100.0
+          ]
+        },
+        "completed_by_type": {}
+      }
+    },
+    "attacks_whose_tools_all_share_users_toolkit": {
+      "k": 4,
+      "n": 1054,
+      "pct": 0.4,
+      "ci95": [
+        0.1,
+        1.0
+      ]
+    }
+  }
+}

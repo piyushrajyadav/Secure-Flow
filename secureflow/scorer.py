@@ -37,16 +37,40 @@ class ScoreResult:
 class RiskScorer:
     """Analyzes text and assigns a 0-100 risk score from detection rules + obfuscation signals."""
 
-    def __init__(self, threshold: int = 60, rules: Optional[List[Rule]] = None):
+    def __init__(self, threshold: int = 60, rules: Optional[List[Rule]] = None,
+                 max_scan_chars: int = 32768, oversize_action: str = "block"):
+        """
+        ``max_scan_chars`` bounds the work done per message (scoring cost is linear in length, about
+        13 ms/KB on the reference machine, so unbounded input is a resource-exhaustion vector).
+        ``oversize_action`` decides what happens above the cap:
+          "block"    - fail closed: the message is not scanned and is treated as blocked (default)
+          "window"   - scan only the first and last ``max_scan_chars/2`` characters, flag the rest
+                       (an attacker can hide an injection in the unscanned middle)
+          "scan_all" - no cap (restores unbounded cost)
+        """
+        if oversize_action not in ("block", "window", "scan_all"):
+            raise ValueError("oversize_action must be 'block', 'window' or 'scan_all'")
         self.threshold = threshold
         self.rules = rules if rules is not None else get_rules()
+        self.max_scan_chars = max_scan_chars
+        self.oversize_action = oversize_action
 
     def score(self, message: str, threshold: Optional[int] = None,
               discounts: Optional[Dict[str, float]] = None) -> ScoreResult:
         """``discounts`` scales named rules (0..1), e.g. to soften role-assignment rules for
         messages that come from an authenticated, untainted principal."""
         thr = self.threshold if threshold is None else threshold
-        views = build_views(message)
+        scan_text = message
+        oversize = len(message) > self.max_scan_chars and self.oversize_action != "scan_all"
+        if oversize and self.oversize_action == "block":
+            return ScoreResult(score=100, is_blocked=True, triggered_rules=["oversize_input"],
+                               message_length=len(message), threshold=thr,
+                               evidence={"oversize_input": f"{len(message)} > {self.max_scan_chars} chars, not scanned"},
+                               flags=["oversize_input"], contributions={"oversize_input": 100})
+        if oversize:                                           # "window"
+            half = self.max_scan_chars // 2
+            scan_text = message[:half] + " " + message[-half:]
+        views = build_views(scan_text)
         raw: Dict[str, int] = {}
         evidence: Dict[str, str] = {}
 
@@ -78,6 +102,8 @@ class RiskScorer:
 
         if len(message) > LENGTH_LIMIT:
             raw["anomalous_length"] = LENGTH_SCORE
+        if oversize:
+            raw["oversize_unscanned_middle"] = 25
 
         if discounts:
             raw = {k: int(round(v * discounts.get(k, 1.0))) for k, v in raw.items()}
