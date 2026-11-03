@@ -30,6 +30,7 @@ def _log(msg):
     if os.environ.get("LLM_VERBOSE") == "1":
         print("[llm]", msg, file=sys.stderr, flush=True)
 _cache = None
+USED_KEYS = set()          # keys served during this process (used by prune_cache)
 
 
 def _load():
@@ -90,6 +91,7 @@ def chat(model: str, messages: list, tools: list = None, max_tokens: int = 400, 
     k = _key(body)
     cache = _load()
     if k in cache:
+        USED_KEYS.add(k)
         return cache[k]
     if os.environ.get("LLM_REPLAY") == "1":
         raise ReplayMiss("response not in cache and LLM_REPLAY=1")
@@ -151,3 +153,14 @@ def chat(model: str, messages: list, tools: list = None, max_tokens: int = 400, 
                     raise
                 time.sleep(0.2 * (attempt_w + 1))
     return resp
+
+
+def prune_cache() -> int:
+    """Rewrite the cache keeping only entries served in this process (drops unreplayable leftovers)."""
+    cache = _load()
+    keep = {k: v for k, v in cache.items() if k in USED_KEYS}
+    nl = chr(10)
+    with open(CACHE, "w", encoding="utf-8", newline=nl) as f:
+        for k, v in keep.items():
+            f.write(json.dumps({"key": k, "model": "-", "response": v}, ensure_ascii=False) + nl)
+    return len(keep)
