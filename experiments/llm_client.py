@@ -1,10 +1,10 @@
 """
-Minimal Groq (OpenAI-compatible) client with an on-disk response cache and rate-limit pacing.
+Minimal OpenAI-compatible hosted-inference client with an on-disk response cache and rate-limit pacing.
 
-* The API key is read ONLY from the GROQ_API_KEY environment variable and is never written to disk.
-* Every response is cached in data/results/groq_cache.jsonl keyed by SHA-256 of the request
+* The API key is read ONLY from the LLM_API_KEY environment variable and is never written to disk.
+* Every response is cached in data/results/llm_cache.jsonl keyed by SHA-256 of the request
   (model + messages + tools + params). Re-running with the cache present needs no key and no network,
-  which is how the released numbers can be re-derived (`GROQ_REPLAY=1`).
+  which is how the released numbers can be re-derived (`LLM_REPLAY=1`).
 * Pacing: sleeps when the per-minute token budget is nearly exhausted, and honours 429 Retry-After.
 
 Models are sampled at temperature 0, but hosted-model outputs are not guaranteed bit-identical across
@@ -21,8 +21,8 @@ import time
 import urllib.error
 import urllib.request
 
-URL = "https://api.groq.com/openai/v1/chat/completions"
-CACHE = os.path.join("data", "results", "groq_cache.jsonl")
+URL = os.environ.get("LLM_API_URL", "https://api.groq.com/openai/v1/chat/completions")
+CACHE = os.path.join("data", "results", "llm_cache.jsonl")
 _lock = threading.Lock()
 
 
@@ -91,11 +91,11 @@ def chat(model: str, messages: list, tools: list = None, max_tokens: int = 400, 
     cache = _load()
     if k in cache:
         return cache[k]
-    if os.environ.get("GROQ_REPLAY") == "1":
-        raise ReplayMiss("response not in cache and GROQ_REPLAY=1")
-    api_key = os.environ.get("GROQ_API_KEY")
+    if os.environ.get("LLM_REPLAY") == "1":
+        raise ReplayMiss("response not in cache and LLM_REPLAY=1")
+    api_key = os.environ.get("LLM_API_KEY") or os.environ.get("GROQ_API_KEY")
     if not api_key:
-        raise RuntimeError("GROQ_API_KEY is not set (or set GROQ_REPLAY=1 to use the cache only)")
+        raise RuntimeError("LLM_API_KEY is not set (or set LLM_REPLAY=1 to use the cache only)")
     reserve = int(len(json.dumps(body)) / 3.2) + max_tokens
     attempt = 0
     while True:
@@ -131,12 +131,12 @@ def chat(model: str, messages: list, tools: list = None, max_tokens: int = 400, 
             if attempt < 4 and e.code >= 500:
                 time.sleep(5 * attempt)
                 continue
-            raise RuntimeError(f"Groq HTTP {e.code}: {text[:200]}")
+            raise RuntimeError(f"LLM API HTTP {e.code}: {text[:200]}")
         except (urllib.error.URLError, TimeoutError, ConnectionError, OSError) as e:
             if attempt < 8:                                     # transient DNS / connection / timeout
                 time.sleep(min(60, 3 * attempt))
                 continue
-            raise RuntimeError(f"Groq network error after {attempt} attempts: {type(e).__name__}")
+            raise RuntimeError(f"LLM API network error after {attempt} attempts: {type(e).__name__}")
     with _lock:
         cache[k] = resp
         os.makedirs(os.path.dirname(CACHE), exist_ok=True)

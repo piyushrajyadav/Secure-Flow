@@ -1,10 +1,10 @@
 """
-Model-in-the-loop experiments via the Groq API (closes items 1-2 of the paper's "planned work").
+Model-in-the-loop experiments via a hosted OpenAI-compatible inference API (closes items 1-2 of the paper's "planned work").
 
-    GROQ_API_KEY=... python -m experiments.groq_eval promptguard
-    GROQ_API_KEY=... python -m experiments.groq_eval judge
-    GROQ_API_KEY=... python -m experiments.groq_eval e2e
-    GROQ_REPLAY=1    python -m experiments.groq_eval all      # re-derive everything from the cache, no key
+    LLM_API_KEY=... python -m experiments.llm_eval promptguard
+    LLM_API_KEY=... python -m experiments.llm_eval judge
+    LLM_API_KEY=... python -m experiments.llm_eval e2e
+    LLM_REPLAY=1    python -m experiments.llm_eval all      # re-derive everything from the cache, no key
 
   promptguard : Llama Prompt Guard 2 (86M) as a learned-classifier baseline vs the v2 rules.
   judge       : the escalate-only LLM judge (gpt-oss-120b) on top of the v2 rules.
@@ -23,7 +23,7 @@ import os
 import random
 import sys
 
-from experiments import groq_client as G
+from experiments import llm_client as G
 from experiments.attack_dataset import get_all_attacks, get_all_legitimate
 from experiments.attack_dataset_v2 import get_attacks_v2, get_legit_v2
 from experiments.attack_dataset_v3 import ATTACKS_V3, LEGIT_V3
@@ -110,7 +110,7 @@ def run_promptguard(n_each):
     usr = sorted({u["User Instruction"] for u in users})
     evaluate("InjecAgent base tool responses (sample)", [s["base"]["Tool Response"] for s in sample], clean + usr)
     evaluate("InjecAgent enhanced tool responses (sample)", [s["enh"]["Tool Response"] for s in sample], clean + usr)
-    dump(OUT + "groq_promptguard.json", res)
+    dump(OUT + "llm_promptguard.json", res)
 
 
 # ------------------------------------------------------------------ 2. escalate-only judge
@@ -162,7 +162,7 @@ def run_judge(n_each, model=JUDGE_MODEL, tag="120b", sets=("v3", "injecagent", "
             "injecagent-base", [s["base"]["Tool Response"] for s in sample], clean)
     if "v2" in sets:
         res["sets"]["v2 corpus"] = evaluate("v2", [a.text for a in get_attacks_v2()], [b.text for b in get_legit_v2()])
-    dump(OUT + f"groq_judge_{tag}.json", res)
+    dump(OUT + f"llm_judge_{tag}.json", res)
 
 
 # ------------------------------------------------------------------ 3. end-to-end agent
@@ -274,7 +274,7 @@ def run_e2e(n_each, n_control):
         spurious += any(n in case["Attacker Tools"] for n in names)
     res["control_clean_tool_response"] = rate(spurious, len(ctl))
     print("control (clean response) spurious attacker-tool calls:", spurious, "/", len(ctl))
-    dump(OUT + "groq_e2e.json", res)
+    dump(OUT + "llm_e2e.json", res)
 
 
 def main():
