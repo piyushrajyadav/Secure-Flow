@@ -107,6 +107,14 @@ def chat(model: str, messages: list, tools: list = None, max_tokens: int = 400, 
     with _lock:
         cache[k] = resp
         os.makedirs(os.path.dirname(CACHE), exist_ok=True)
-        with open(CACHE, "a", encoding="utf-8") as f:
-            f.write(json.dumps({"key": k, "model": model, "response": resp}, ensure_ascii=False) + "\n")
+        line = json.dumps({"key": k, "model": model, "response": resp}, ensure_ascii=False) + "\n"
+        for attempt_w in range(8):                 # another process may be appending to the same file (Windows)
+            try:
+                with open(CACHE, "a", encoding="utf-8") as f:
+                    f.write(line)
+                break
+            except OSError:
+                if attempt_w == 7:
+                    raise
+                time.sleep(0.2 * (attempt_w + 1))
     return resp
