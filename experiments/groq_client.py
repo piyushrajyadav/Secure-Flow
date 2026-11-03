@@ -117,7 +117,7 @@ def chat(model: str, messages: list, tools: list = None, max_tokens: int = 400, 
             text = e.read().decode("utf-8", "replace")
             if e.code == 429 and attempt < 8:
                 wait = float(e.headers.get("retry-after", "10"))
-                _log(f"429 attempt {attempt}: retry-after={wait}s :: {text[:160]}")
+                _log(f"429 attempt {attempt}: retry-after={wait}s :: {text[:700]}")
                 time.sleep(min(90, wait + 1))
                 continue
             if e.code == 400:
